@@ -1,0 +1,95 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkitektum.Kartverket.SOSI.EA.Plugin", "Arkitektum.Kartverket.SOSI.EA.Plugin\Arkitektum.Kartverket.SOSI.EA.Plugin.csproj", "{034EABF5-A35B-4462-AE77-5D0787B27BAC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkitektum.Kartverket.SOSI.EA.Plugin.Test", "Arkitektum.Kartverket.SOSI.EA.Plugin.Test\Arkitektum.Kartverket.SOSI.EA.Plugin.Test.csproj", "{B26B9526-6C10-41FF-A529-BF734E97A307}"
+EndProject
+Project("{6141683F-8A12-4E36-9623-2EB02B2C2303}") = "Setup.SOSI", "Setup.SOSI\Setup.SOSI.isproj", "{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F} = {4CFE4C91-8B4F-49E4-9E05-1F393F69261F}
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC} = {034EABF5-A35B-4462-AE77-5D0787B27BAC}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkitektum.Kartverket.SOSI.Model", "Arkitektum.Kartverket.SOSI.Model\Arkitektum.Kartverket.SOSI.Model.csproj", "{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkitektum.Kartverket.SOSI.EA.Plugin.Shared", "Arkitektum.Kartverket.SOSI.EA.Plugin.Shared\Arkitektum.Kartverket.SOSI.EA.Plugin.Shared.csproj", "{51AD58BD-9DE7-4138-94BB-C58ABB811703}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		CD_ROM|Any CPU = CD_ROM|Any CPU
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+		SingleImage|Any CPU = SingleImage|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.CD_ROM|Any CPU.ActiveCfg = CD_ROM
+		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.CD_ROM|Any CPU.Build.0 = CD_ROM
+		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.Debug|Any CPU.ActiveCfg = SingleImage
+		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.Debug|Any CPU.Build.0 = SingleImage
+		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.Release|Any CPU.ActiveCfg = SingleImage
+		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.Release|Any CPU.Build.0 = SingleImage
+		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.SingleImage|Any CPU.ActiveCfg = SingleImage
+		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.SingleImage|Any CPU.Build.0 = SingleImage
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.DVD-5|Any CPU.ActiveCfg = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.DVD-5|Any CPU.Build.0 = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 6
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://arkitektum.visualstudio.com/defaultcollection
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = Arkitektum.Kartverket.SOSI.EA.Plugin\\Arkitektum.Kartverket.SOSI.EA.Plugin.csproj
+		SccProjectName1 = Arkitektum.Kartverket.SOSI.EA.Plugin
+		SccLocalPath1 = Arkitektum.Kartverket.SOSI.EA.Plugin
+		SccProjectUniqueName2 = Arkitektum.Kartverket.SOSI.EA.Plugin.Test\\Arkitektum.Kartverket.SOSI.EA.Plugin.Test.csproj
+		SccProjectName2 = Arkitektum.Kartverket.SOSI.EA.Plugin.Test
+		SccLocalPath2 = Arkitektum.Kartverket.SOSI.EA.Plugin.Test
+		SccProjectUniqueName3 = Setup.SOSI\\Setup.SOSI.isproj
+		SccProjectName3 = Setup.SOSI
+		SccLocalPath3 = Setup.SOSI
+		SccProjectUniqueName4 = Arkitektum.Kartverket.SOSI.Model\\Arkitektum.Kartverket.SOSI.Model.csproj
+		SccProjectName4 = Arkitektum.Kartverket.SOSI.Model
+		SccLocalPath4 = Arkitektum.Kartverket.SOSI.Model
+		SccProjectUniqueName5 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared\\Arkitektum.Kartverket.SOSI.EA.Plugin.Shared.csproj
+		SccProjectName5 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared
+		SccLocalPath5 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared
+	EndGlobalSection
+EndGlobal

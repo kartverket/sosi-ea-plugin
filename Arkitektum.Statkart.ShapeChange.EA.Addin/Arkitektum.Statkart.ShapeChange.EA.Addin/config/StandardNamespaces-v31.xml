@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlNamespaces xmlns="http://www.interactive-instruments.de/ShapeChange/Configuration/1.1">
+	<XmlNamespace nsabr="sc" ns="http://www.interactive-instruments.de/ShapeChange/AppInfo" location="http://portele.de/ShapeChangeAppinfo.xsd" />
+	<XmlNamespace nsabr="xlink" ns="http://www.w3.org/1999/xlink" location="http://schemas.opengis.net/xlink/1.0.0/xlinks.xsd" />
+	<XmlNamespace nsabr="gml" ns="http://www.opengis.net/gml" location="http://schemas.opengis.net/gml/3.1.1/base/gml.xsd" />
+	<XmlNamespace nsabr="gmd" ns="http://www.isotc211.org/2005/gmd" location="http://schemas.opengis.net/iso/19139/20070417/gmd/gmd.xsd" />
+	<XmlNamespace nsabr="gco" ns="http://www.isotc211.org/2005/gco" location="http://schemas.opengis.net/iso/19139/20070417/gco/gco.xsd" />
+</xmlNamespaces>

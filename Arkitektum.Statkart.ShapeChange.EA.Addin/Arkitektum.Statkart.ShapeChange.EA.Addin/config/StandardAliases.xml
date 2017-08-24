@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<stereotypeAliases xmlns="http://www.interactive-instruments.de/ShapeChange/Configuration/1.1">
+	<StereotypeAlias wellknown="DataType" alias="Request" />
+	<StereotypeAlias wellknown="DataType" alias="Response" />
+	<StereotypeAlias wellknown="FeatureType" alias="Feature" />
+	<StereotypeAlias wellknown="FeatureType" alias="feature" />
+	<StereotypeAlias wellknown="Application Schema" alias="ApplicationSchema" />
+	<StereotypeAlias wellknown="Application Schema" alias="applicationSchema" />
+	<StereotypeAlias wellknown="Application Schema" alias="Schema" />
+	<StereotypeAlias wellknown="Application Schema" alias="schema" />
+	<StereotypeAlias wellknown="" alias="Bundle" />
+	<StereotypeAlias wellknown="" alias="bundle" />
+	<StereotypeAlias wellknown="" alias="Abstract" />
+	<StereotypeAlias wellknown="" alias="abstract" />
+</stereotypeAliases>
