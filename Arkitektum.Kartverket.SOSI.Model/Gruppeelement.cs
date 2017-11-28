@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Arkitektum.Kartverket.SOSI.Model
 {
@@ -11,8 +8,11 @@ namespace Arkitektum.Kartverket.SOSI.Model
         public Gruppeelement Inkluder { get; set; }
         public List<AbstraktEgenskap> Egenskaper { get; set; }
         public List<Beskrankning> OCLconstraints { get; set; }
-        
 
+        public void LeggTilEgenskap(AbstraktEgenskap egenskap)
+        {
+            Egenskaper.Add(egenskap);
+        }
 
         public override bool Equals(object obj)
         {

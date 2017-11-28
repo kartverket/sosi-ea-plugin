@@ -1033,6 +1033,10 @@ namespace Arkitektum.Kartverket.SOSI.Model
             foreach (global::EA.Attribute att in elm.Attributes)
             {
                 string nestePrikknivå = prikknivå + ".";
+
+                var basiselementBuilder =
+                                new BasiselementBuilder(_repository, nestePrikknivå, standard).ForAttributt(att);
+
                 if (att.ClassifierID != 0)
                 {
                     Element elm1 = _repository.GetElementByID(att.ClassifierID);
@@ -1041,13 +1045,6 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     {
                         ot.Egenskaper.Add(LagEgenskapForKjentType(nestePrikknivå, att, standard));
                     }
-                    //else if (ErTomDatatype(elm1))
-                    //{
-                    //    var basiselementBuilder =
-                    //            new BasiselementBuilder(_repository, nestePrikknivå, standard).ForAttributt(att);
-                    //    Basiselement basiselement = basiselementBuilder.MedMappingAvTomDatatype().Opprett();
-                    //    ot.Egenskaper.Add(basiselement);
-                    //}
                     else if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration" || elm1.Type.ToLower() == "enumeration")
                     {
                         Basiselement eg = LagKodelisteEgenskap(nestePrikknivå, elm1, att, parentObjekttype.OCLconstraints);
@@ -1057,24 +1054,15 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     {
                         LagUnionEgenskaperForGruppeelement(nestePrikknivå, elm1, att, parentObjekttype, standard, ot);
                     }
-                    else if (att.Type.ToLower() == "integer" || att.Type.ToLower() == "characterstring" || att.Type.ToLower() == "real" ||
-                             att.Type.ToLower() == "date" || att.Type.ToLower() == "datetime" || att.Type.ToLower() == "boolean")
+                    else if (BasiselementBuilder.ErBasistype(att.Type))
                     {
-                        Basiselement eg = LagEgenskap(nestePrikknivå, att, standard);
-                        ot.Egenskaper.Add(eg);
-                    }
-                    else if (att.Type.ToLower() == "flate" || att.Type.ToLower() == "punkt" || att.Type.ToLower() == "kurve")
-                    {
-
-                        Basiselement eg = LagEgenskap(nestePrikknivå, att, standard);
-                        ot.Egenskaper.Add(eg);
+                        Basiselement basiselement = basiselementBuilder.MedMappingAvBasistyper().Opprett();
+                        ot.LeggTilEgenskap(basiselement);
                     }
                     else if (ErTomDatatype(elm1))
                     {
-                        var basiselementBuilder =
-                                new BasiselementBuilder(_repository, nestePrikknivå, standard).ForAttributt(att);
                         Basiselement basiselement = basiselementBuilder.MedMappingAvTomDatatype().Opprett();
-                        ot.Egenskaper.Add(basiselement);
+                        ot.LeggTilEgenskap(basiselement);
                     }
                     else
                     {
@@ -1084,9 +1072,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 }
                 else
                 {
-
-                    Basiselement eg = LagEgenskap(nestePrikknivå, att, standard);
-                    ot.Egenskaper.Add(eg);
+                    Basiselement basiselement = basiselementBuilder.MedMappingAvBasistyper().Opprett();
+                    ot.LeggTilEgenskap(basiselement);
                 }
             }
             foreach (Connector connector in elm.Connectors)
