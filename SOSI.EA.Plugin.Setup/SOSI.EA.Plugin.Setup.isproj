@@ -1,4 +1,5 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<PropertyGroup>
 		<!-- Select a Product Configuration -->
 		<InstallShieldProductConfiguration>Express</InstallShieldProductConfiguration>
@@ -8,7 +9,7 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<!-- The InstallShieldProject item selects the project to build -->
-		<InstallShieldProject Include="$(MSBuildProjectDirectory)\$(MSBuildProjectName).isl"/>
+		<InstallShieldProject Include="$(MSBuildProjectDirectory)\$(MSBuildProjectName).ise"/>
 		<!-- The InstallShieldReleaseFlags sets Release Flags -->
 		<!--<InstallShieldReleaseFlags Include=""/>-->
 		<!-- The InstallShieldMergeModulePath specifies what directories are
@@ -26,11 +27,15 @@
 			<TargetPath>My Test Exe.exe</TargetPath>
 		</TaggedOutputs> -->
 	</ItemGroup>
-	<Import Project="$(MSBuildExtensionsPath32)\InstallShield\2012SpringLimited\InstallShield.targets"/>
+	<Import Project="$(MSBuildExtensionsPath32)\InstallShield\2016\InstallShield.targets"/>
 	<ItemGroup>
 		<ProjectReference Include="..\Arkitektum.Kartverket.SOSI.EA.Plugin\Arkitektum.Kartverket.SOSI.EA.Plugin.csproj">
 			<Name>Arkitektum.Kartverket.SOSI.EA.Plugin</Name>
 			<Project>{034EABF5-A35B-4462-AE77-5D0787B27BAC}</Project>
+		</ProjectReference>
+		<ProjectReference Include="..\Arkitektum.Kartverket.SOSI.Model\Arkitektum.Kartverket.SOSI.Model.csproj">
+			<Name>Arkitektum.Kartverket.SOSI.Model</Name>
+			<Project>{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}</Project>
 		</ProjectReference>
 	</ItemGroup>
 </Project>

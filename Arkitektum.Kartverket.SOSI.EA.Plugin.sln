@@ -1,75 +1,138 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2009
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkitektum.Kartverket.SOSI.EA.Plugin", "Arkitektum.Kartverket.SOSI.EA.Plugin\Arkitektum.Kartverket.SOSI.EA.Plugin.csproj", "{034EABF5-A35B-4462-AE77-5D0787B27BAC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkitektum.Kartverket.SOSI.EA.Plugin.Test", "Arkitektum.Kartverket.SOSI.EA.Plugin.Test\Arkitektum.Kartverket.SOSI.EA.Plugin.Test.csproj", "{B26B9526-6C10-41FF-A529-BF734E97A307}"
 EndProject
-Project("{6141683F-8A12-4E36-9623-2EB02B2C2303}") = "Setup.SOSI", "Setup.SOSI\Setup.SOSI.isproj", "{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}"
-	ProjectSection(ProjectDependencies) = postProject
-		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F} = {4CFE4C91-8B4F-49E4-9E05-1F393F69261F}
-		{034EABF5-A35B-4462-AE77-5D0787B27BAC} = {034EABF5-A35B-4462-AE77-5D0787B27BAC}
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkitektum.Kartverket.SOSI.Model", "Arkitektum.Kartverket.SOSI.Model\Arkitektum.Kartverket.SOSI.Model.csproj", "{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkitektum.Kartverket.SOSI.EA.Plugin.Shared", "Arkitektum.Kartverket.SOSI.EA.Plugin.Shared\Arkitektum.Kartverket.SOSI.EA.Plugin.Shared.csproj", "{51AD58BD-9DE7-4138-94BB-C58ABB811703}"
 EndProject
+Project("{ACA99D24-2A4B-4C16-9E92-13D6ABC4AC35}") = "SOSI.EA.Plugin.Setup", "SOSI.EA.Plugin.Setup\SOSI.EA.Plugin.Setup.isproj", "{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		CD_ROM|Any CPU = CD_ROM|Any CPU
+		Custom|Any CPU = Custom|Any CPU
 		Debug|Any CPU = Debug|Any CPU
+		DVD-10|Any CPU = DVD-10|Any CPU
+		DVD-18|Any CPU = DVD-18|Any CPU
+		DVD-5|Any CPU = DVD-5|Any CPU
+		DVD-9|Any CPU = DVD-9|Any CPU
 		Release|Any CPU = Release|Any CPU
 		SingleImage|Any CPU = SingleImage|Any CPU
+		WebDeployment|Any CPU = WebDeployment|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
 		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.Custom|Any CPU.ActiveCfg = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.Custom|Any CPU.Build.0 = Debug|Any CPU
 		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.DVD-10|Any CPU.ActiveCfg = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.DVD-10|Any CPU.Build.0 = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.DVD-18|Any CPU.ActiveCfg = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.DVD-18|Any CPU.Build.0 = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.DVD-5|Any CPU.ActiveCfg = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.DVD-5|Any CPU.Build.0 = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.DVD-9|Any CPU.ActiveCfg = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.DVD-9|Any CPU.Build.0 = Debug|Any CPU
 		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
 		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.WebDeployment|Any CPU.ActiveCfg = Debug|Any CPU
+		{034EABF5-A35B-4462-AE77-5D0787B27BAC}.WebDeployment|Any CPU.Build.0 = Debug|Any CPU
 		{B26B9526-6C10-41FF-A529-BF734E97A307}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
 		{B26B9526-6C10-41FF-A529-BF734E97A307}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.Custom|Any CPU.ActiveCfg = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.Custom|Any CPU.Build.0 = Debug|Any CPU
 		{B26B9526-6C10-41FF-A529-BF734E97A307}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B26B9526-6C10-41FF-A529-BF734E97A307}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.DVD-10|Any CPU.ActiveCfg = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.DVD-10|Any CPU.Build.0 = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.DVD-18|Any CPU.ActiveCfg = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.DVD-18|Any CPU.Build.0 = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.DVD-5|Any CPU.ActiveCfg = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.DVD-5|Any CPU.Build.0 = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.DVD-9|Any CPU.ActiveCfg = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.DVD-9|Any CPU.Build.0 = Debug|Any CPU
 		{B26B9526-6C10-41FF-A529-BF734E97A307}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B26B9526-6C10-41FF-A529-BF734E97A307}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B26B9526-6C10-41FF-A529-BF734E97A307}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
 		{B26B9526-6C10-41FF-A529-BF734E97A307}.SingleImage|Any CPU.Build.0 = Release|Any CPU
-		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.CD_ROM|Any CPU.ActiveCfg = CD_ROM
-		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.CD_ROM|Any CPU.Build.0 = CD_ROM
-		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.Debug|Any CPU.ActiveCfg = SingleImage
-		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.Debug|Any CPU.Build.0 = SingleImage
-		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.Release|Any CPU.ActiveCfg = SingleImage
-		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.Release|Any CPU.Build.0 = SingleImage
-		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.SingleImage|Any CPU.ActiveCfg = SingleImage
-		{76C811F5-9A5A-4FF5-AAC6-E4ED7D333C8B}.SingleImage|Any CPU.Build.0 = SingleImage
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.WebDeployment|Any CPU.ActiveCfg = Debug|Any CPU
+		{B26B9526-6C10-41FF-A529-BF734E97A307}.WebDeployment|Any CPU.Build.0 = Debug|Any CPU
 		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
 		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.Custom|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.Custom|Any CPU.Build.0 = Debug|Any CPU
 		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.DVD-10|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.DVD-10|Any CPU.Build.0 = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.DVD-18|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.DVD-18|Any CPU.Build.0 = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.DVD-5|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.DVD-5|Any CPU.Build.0 = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.DVD-9|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.DVD-9|Any CPU.Build.0 = Debug|Any CPU
 		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
 		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.WebDeployment|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CFE4C91-8B4F-49E4-9E05-1F393F69261F}.WebDeployment|Any CPU.Build.0 = Debug|Any CPU
 		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
 		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.Custom|Any CPU.ActiveCfg = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.Custom|Any CPU.Build.0 = Debug|Any CPU
 		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.DVD-10|Any CPU.ActiveCfg = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.DVD-10|Any CPU.Build.0 = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.DVD-18|Any CPU.ActiveCfg = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.DVD-18|Any CPU.Build.0 = Debug|Any CPU
 		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.DVD-5|Any CPU.ActiveCfg = Debug|Any CPU
 		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.DVD-5|Any CPU.Build.0 = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.DVD-9|Any CPU.ActiveCfg = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.DVD-9|Any CPU.Build.0 = Debug|Any CPU
 		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.Release|Any CPU.Build.0 = Release|Any CPU
 		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
 		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.WebDeployment|Any CPU.ActiveCfg = Debug|Any CPU
+		{51AD58BD-9DE7-4138-94BB-C58ABB811703}.WebDeployment|Any CPU.Build.0 = Debug|Any CPU
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.CD_ROM|Any CPU.ActiveCfg = CD_ROM
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.CD_ROM|Any CPU.Build.0 = CD_ROM
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Custom|Any CPU.ActiveCfg = Custom
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Custom|Any CPU.Build.0 = Custom
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Debug|Any CPU.ActiveCfg = DVD-9
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Debug|Any CPU.Build.0 = DVD-9
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-10|Any CPU.ActiveCfg = DVD-10
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-10|Any CPU.Build.0 = DVD-10
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-18|Any CPU.ActiveCfg = DVD-18
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-18|Any CPU.Build.0 = DVD-18
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-5|Any CPU.ActiveCfg = DVD-5
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-5|Any CPU.Build.0 = DVD-5
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-9|Any CPU.ActiveCfg = DVD-9
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-9|Any CPU.Build.0 = DVD-9
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Release|Any CPU.ActiveCfg = WebDeployment
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Release|Any CPU.Build.0 = WebDeployment
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.SingleImage|Any CPU.ActiveCfg = SingleImage
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.SingleImage|Any CPU.Build.0 = SingleImage
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.WebDeployment|Any CPU.ActiveCfg = WebDeployment
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.WebDeployment|Any CPU.Build.0 = WebDeployment
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {330513B4-5DA2-479F-83A5-7AA48A5BBE6B}
 	EndGlobalSection
 	GlobalSection(TeamFoundationVersionControl) = preSolution
 		SccNumberOfProjects = 6
@@ -82,14 +145,14 @@ Global
 		SccProjectUniqueName2 = Arkitektum.Kartverket.SOSI.EA.Plugin.Test\\Arkitektum.Kartverket.SOSI.EA.Plugin.Test.csproj
 		SccProjectName2 = Arkitektum.Kartverket.SOSI.EA.Plugin.Test
 		SccLocalPath2 = Arkitektum.Kartverket.SOSI.EA.Plugin.Test
-		SccProjectUniqueName3 = Setup.SOSI\\Setup.SOSI.isproj
-		SccProjectName3 = Setup.SOSI
-		SccLocalPath3 = Setup.SOSI
-		SccProjectUniqueName4 = Arkitektum.Kartverket.SOSI.Model\\Arkitektum.Kartverket.SOSI.Model.csproj
-		SccProjectName4 = Arkitektum.Kartverket.SOSI.Model
-		SccLocalPath4 = Arkitektum.Kartverket.SOSI.Model
-		SccProjectUniqueName5 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared\\Arkitektum.Kartverket.SOSI.EA.Plugin.Shared.csproj
-		SccProjectName5 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared
-		SccLocalPath5 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared
+		SccProjectUniqueName3 = Arkitektum.Kartverket.SOSI.Model\\Arkitektum.Kartverket.SOSI.Model.csproj
+		SccProjectName3 = Arkitektum.Kartverket.SOSI.Model
+		SccLocalPath3 = Arkitektum.Kartverket.SOSI.Model
+		SccProjectUniqueName4 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared\\Arkitektum.Kartverket.SOSI.EA.Plugin.Shared.csproj
+		SccProjectName4 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared
+		SccLocalPath4 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared
+		SccProjectUniqueName5 = SOSI.EA.Plugin.Setup\\SOSI.EA.Plugin.Setup.isproj
+		SccProjectName5 = SOSI.EA.Plugin.Setup
+		SccLocalPath5 = SOSI.EA.Plugin.Setup
 	EndGlobalSection
 EndGlobal
