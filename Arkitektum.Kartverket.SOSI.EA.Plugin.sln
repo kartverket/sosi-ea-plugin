@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2009
+VisualStudioVersion = 15.0.27130.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arkitektum.Kartverket.SOSI.EA.Plugin", "Arkitektum.Kartverket.SOSI.EA.Plugin\Arkitektum.Kartverket.SOSI.EA.Plugin.csproj", "{034EABF5-A35B-4462-AE77-5D0787B27BAC}"
 EndProject
@@ -111,8 +111,8 @@ Global
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.CD_ROM|Any CPU.Build.0 = CD_ROM
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Custom|Any CPU.ActiveCfg = Custom
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Custom|Any CPU.Build.0 = Custom
-		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Debug|Any CPU.ActiveCfg = DVD-9
-		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Debug|Any CPU.Build.0 = DVD-9
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Debug|Any CPU.ActiveCfg = SingleImage
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Debug|Any CPU.Build.0 = SingleImage
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-10|Any CPU.ActiveCfg = DVD-10
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-10|Any CPU.Build.0 = DVD-10
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-18|Any CPU.ActiveCfg = DVD-18
@@ -121,8 +121,8 @@ Global
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-5|Any CPU.Build.0 = DVD-5
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-9|Any CPU.ActiveCfg = DVD-9
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.DVD-9|Any CPU.Build.0 = DVD-9
-		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Release|Any CPU.ActiveCfg = WebDeployment
-		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Release|Any CPU.Build.0 = WebDeployment
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Release|Any CPU.ActiveCfg = SingleImage
+		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.Release|Any CPU.Build.0 = SingleImage
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.SingleImage|Any CPU.ActiveCfg = SingleImage
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.SingleImage|Any CPU.Build.0 = SingleImage
 		{F55CE944-CC35-4C49-9DC4-C8E3DDCE52FD}.WebDeployment|Any CPU.ActiveCfg = WebDeployment
@@ -133,26 +133,5 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {330513B4-5DA2-479F-83A5-7AA48A5BBE6B}
-	EndGlobalSection
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 6
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = https://arkitektum.visualstudio.com/defaultcollection
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = Arkitektum.Kartverket.SOSI.EA.Plugin\\Arkitektum.Kartverket.SOSI.EA.Plugin.csproj
-		SccProjectName1 = Arkitektum.Kartverket.SOSI.EA.Plugin
-		SccLocalPath1 = Arkitektum.Kartverket.SOSI.EA.Plugin
-		SccProjectUniqueName2 = Arkitektum.Kartverket.SOSI.EA.Plugin.Test\\Arkitektum.Kartverket.SOSI.EA.Plugin.Test.csproj
-		SccProjectName2 = Arkitektum.Kartverket.SOSI.EA.Plugin.Test
-		SccLocalPath2 = Arkitektum.Kartverket.SOSI.EA.Plugin.Test
-		SccProjectUniqueName3 = Arkitektum.Kartverket.SOSI.Model\\Arkitektum.Kartverket.SOSI.Model.csproj
-		SccProjectName3 = Arkitektum.Kartverket.SOSI.Model
-		SccLocalPath3 = Arkitektum.Kartverket.SOSI.Model
-		SccProjectUniqueName4 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared\\Arkitektum.Kartverket.SOSI.EA.Plugin.Shared.csproj
-		SccProjectName4 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared
-		SccLocalPath4 = Arkitektum.Kartverket.SOSI.EA.Plugin.Shared
-		SccProjectUniqueName5 = SOSI.EA.Plugin.Setup\\SOSI.EA.Plugin.Setup.isproj
-		SccProjectName5 = SOSI.EA.Plugin.Setup
-		SccLocalPath5 = SOSI.EA.Plugin.Setup
 	EndGlobalSection
 EndGlobal
