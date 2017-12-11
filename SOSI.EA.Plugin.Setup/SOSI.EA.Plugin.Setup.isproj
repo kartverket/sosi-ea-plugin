@@ -15,6 +15,11 @@
 		<!-- The InstallShieldMergeModulePath specifies what directories are
 		searched for Merge Modules -->
 		<!--<InstallShieldMergeModulePath Include=""/>-->
+
+		<!-- Generate new product code on every build to promote upgrade-->
+		<InstallShieldPropertyOverrides Include="{$([System.Guid]::NewGuid().ToString().ToUpper())}">
+			<Property>ProductCode</Property>
+		</InstallShieldPropertyOverrides>
 	</ItemGroup>
 	<ItemGroup>
 		<!-- The ProjectReference items refer to any Visual Studio solutions you want to automatically probe for Project Output Groups.  -->
