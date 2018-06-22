@@ -365,9 +365,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
             oTable.Cell(rowcounter, 2).Range.Text = b.SOSI_Navn;
             oTable.Cell(rowcounter, 2).Range.Bold = 0;
             oTable.Cell(rowcounter, 2).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            if (b.TillatteVerdier.Count < 10)
-                oTable.Cell(rowcounter, 3).Range.Text = b.Operator + String.Join(",", b.TillatteVerdier.ToArray(), 0, b.TillatteVerdier.Count);
-            else oTable.Cell(rowcounter, 3).Range.Text = "Kodeliste";
+            oTable.Cell(rowcounter, 3).Range.Text = GetAnyAllowedValuesOrDefaultValue();
             oTable.Cell(rowcounter, 3).Range.Bold = 0;
             oTable.Cell(rowcounter, 3).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
             
@@ -382,6 +380,20 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
                 oTable.Cell(rowcounter, 6).Range.Text = b.Standard;
                 oTable.Cell(rowcounter, 6).Range.Bold = 0;
                 oTable.Cell(rowcounter, 6).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
+            }
+
+            string GetAnyAllowedValuesOrDefaultValue()
+            {
+                var operatorAndParenthesis = b.Operator + " ({0})";
+
+                if (b.TillatteVerdier.Any())
+                {
+                    return string.Format(operatorAndParenthesis,
+                        b.TillatteVerdier.Count < 10 ? string.Join(",", b.TillatteVerdier.ToArray()) : "Kodeliste"
+                    );
+                }
+
+                return b.HarStandardVerdi() ? string.Format(operatorAndParenthesis, b.StandardVerdi) : string.Empty;
             }
         }
     }
