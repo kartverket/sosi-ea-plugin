@@ -31,7 +31,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
                         produktgruppe = theTags.Value.ToLower();
                         break;
                     case "sosi_kortnavn":
-                        kortnavn = theTags.Value.ToLower();
+                        kortnavn = theTags.Value;
                         break;
                     case "version":
                         versjon = theTags.Value;
