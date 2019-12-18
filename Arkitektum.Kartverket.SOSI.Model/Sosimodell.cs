@@ -232,11 +232,13 @@ namespace Arkitektum.Kartverket.SOSI.Model
             {
                 try
                 {
-                    if (att.Type.ToLower() == "flate" || att.Type.ToLower() == "punkt" || att.Type.ToLower() == "sverm")
+                    var type = GetAttributeType(att.Type);
+
+                    if (type == "flate" || type == "punkt" || type == "sverm")
                     {
-                        objekttype.Geometrityper.Add(att.Type.ToUpper());
+                        objekttype.Geometrityper.Add(type.ToUpper());
                     }
-                    else if (att.Type.ToLower() == "kurve")
+                    else if (type == "kurve")
                     {
                         objekttype.Geometrityper.Add("KURVE");
                         objekttype.Geometrityper.Add("BUEP");
@@ -468,6 +470,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
             {
                 attnavn.Add(att.Name);
 
+                var type = GetAttributeType(att.Type);
+
                 if (att.ClassifierID != 0) 
                 {
                     Element elm1 = _repository.GetElementByID(att.ClassifierID);
@@ -487,7 +491,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
                         ot.Egenskaper.Add(eg);
                     }
-                    else if (att.Type.ToLower() == "flate" || att.Type.ToLower() == "punkt" || att.Type.ToLower() == "kurve")
+                    else if (type == "flate" || type == "punkt" || type == "kurve")
                     {
 
                         Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
@@ -511,6 +515,21 @@ namespace Arkitektum.Kartverket.SOSI.Model
             bs.Navn = "Union " + elm.Name;
             bs.Notat = "et av elementene " + String.Join(",", attnavn.ToArray(), 0, attnavn.Count) + " er påkrevet";
             ot.OCLconstraints.Add(bs);
+        }
+
+        private string GetAttributeType(string type)
+        {
+            type = type.ToLower();
+            if (type == "gm_point")
+                type = "punkt";
+            else if (type == "gm_multipoint")
+                type = "sverm";
+            else if (type == "gm_curve" || type == "gm_compositecurve")
+                type = "kurve";
+            else if (type == "gm_surface" || type == "gm_compositesurface")
+                type = "flate";
+
+            return type;
         }
 
         private List<AbstraktEgenskap> LagConnectorEgenskaper(string prikknivå, Connector connector, Element e, string standard, Objekttype ot)
@@ -1167,6 +1186,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
                    
                     Element elm1 = _repository.GetElementByID(att.ClassifierID);
 
+                    var type = GetAttributeType(att.Type);
+
                     if (ErKjentType(att.Type))
                     {
                         ot.Egenskaper.Add(LagEgenskapForKjentType(prikknivå, att, standard));
@@ -1185,7 +1206,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
                         ot.Egenskaper.Add(eg);
                     }
-                    else if (att.Type.ToLower() == "flate" || att.Type.ToLower() == "punkt" || att.Type.ToLower() == "kurve")
+                    else if (type == "flate" || type == "punkt" || type == "kurve")
                     {
                         Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
                         ot.Egenskaper.Add(eg);
@@ -1266,6 +1287,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
             {
                 attnavn.Add(att.Name);
 
+                var type = GetAttributeType(att.Type);
+
                 if (att.ClassifierID != 0)
                 {
                    Element elm1 = _repository.GetElementByID(att.ClassifierID);
@@ -1285,7 +1308,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         ot.Egenskaper.Add(eg);
                     }
                    
-                    else if (att.Type.ToLower() == "flate" || att.Type.ToLower() == "punkt" || att.Type.ToLower() == "kurve")
+                    else if (type == "flate" || type == "punkt" || type == "kurve")
                     {
 
                         Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
