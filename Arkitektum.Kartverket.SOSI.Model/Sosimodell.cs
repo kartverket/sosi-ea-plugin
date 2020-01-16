@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
@@ -16,7 +16,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
         };
 
         private readonly Repository _repository;
-  
+
         private List<Objekttype> _objekttyper;
         public Sosimodell(Repository repository)
         {
@@ -46,7 +46,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
             return _objekttyper;
         }
-        
+
         private bool SkalLeggeTilKantUtsnitt(List<Objekttype> objekttyper)
         {
             return objekttyper.Any(o => o.HarGeometri("flate"))
@@ -62,7 +62,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
                 // Maskinelt opprettet KantUtsnitt skrives som
                 // "..INKLUDER KantUtsnitt" i SOSIKontrollGenerator
-                
+
                 Geometrityper = new List<string>() { "KURVE" },
                 Standard = standard,
                 Egenskaper = new List<AbstraktEgenskap>()
@@ -110,7 +110,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         }
                     }
                 }
-               else skalLeggeTilAvgrensning = false;
+                else skalLeggeTilAvgrensning = false;
             }
 
             return skalLeggeTilAvgrensning;
@@ -184,7 +184,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
         {
             return el.Type == "Class" && (el.Stereotype.ToLower() == "featuretype" || el.Stereotype.ToLower() == "type") && el.Abstract == "0";
         }
-        
+
 
         public Objekttype LagObjekttype(Element element, string prikknivå, bool lagobjekttype, List<Beskrankning> oclfraSubObjekt)
         {
@@ -206,7 +206,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 basiselement.Standard = standard;
                 basiselement.SOSI_Navn = prikknivå + "OBJTYPE";
                 basiselement.UML_Navn = "";
-                
+
                 basiselement.Operator = "=";
                 basiselement.TillatteVerdier = new List<string>();
                 basiselement.TillatteVerdier.Add(element.Name);
@@ -227,6 +227,11 @@ namespace Arkitektum.Kartverket.SOSI.Model
             }
 
             objekttype.LeggTilBeskrankninger(LagBeskrankninger(element));
+
+            //Sjekk for modell 5 regler på topo/avgrensninger
+            var avgrensninger = LagTopoAvgrensninger(element);
+            if (avgrensninger.Any())
+                objekttype.AvgrensesAv.AddRange(avgrensninger);
 
             foreach (Attribute att in element.Attributes)
             {
@@ -254,7 +259,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         if (att.ClassifierID != 0)
                         {
                             Element elm = _repository.GetElementByID(att.ClassifierID);
-                            
+
                             if (BasiselementBuilder.ErBasistype(att.Type))
                             {
                                 Basiselement basiselement = basiselementBuilder.MedMappingAvBasistyper().Opprett();
@@ -314,7 +319,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         objekttype.Egenskaper.AddRange(eg);
                     }
 
-                    
+
                 }
                 else if (connector.MetaType == "Generalization")
                 {
@@ -338,12 +343,12 @@ namespace Arkitektum.Kartverket.SOSI.Model
                             if (!objekttype.AvgrensesAv.Contains(obj))
                                 objekttype.AvgrensesAv.Add(obj);
                         }
-                        
+
                         foreach (Beskrankning b in tmp2.OCLconstraints)
                         {
                             objekttype.LeggTilBeskrankning(b, tmp2.UML_Navn);
                         }
-                        
+
                     }
 
                 }
@@ -352,7 +357,27 @@ namespace Arkitektum.Kartverket.SOSI.Model
             return objekttype;
 
         }
+        private static List<string> LagTopoAvgrensninger(Element element)
+        {
+            List<string> beskrankninger = new List<string>();
 
+            foreach (global::EA.Constraint constraint in element.Constraints)
+            {
+                var name = constraint.Name;
+
+                if (name.StartsWith("KanAvgrensesAv")) {
+
+                    var objectTypeNames = name.Remove(0, 15);
+
+                    var objectTypes = objectTypeNames.Split(',');
+                    foreach(var objectType in objectTypes) { 
+                        beskrankninger.Add(objectType.Trim());
+                    }
+                } 
+            }
+            return beskrankninger;
+
+        }
         private static List<Beskrankning> LagBeskrankninger(Element element)
         {
             List<Beskrankning> beskrankninger = new List<Beskrankning>();
@@ -472,7 +497,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
                 var type = GetAttributeType(att.Type);
 
-                if (att.ClassifierID != 0) 
+                if (att.ClassifierID != 0)
                 {
                     Element elm1 = _repository.GetElementByID(att.ClassifierID);
 
@@ -484,7 +509,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     else if (elm1.Stereotype.ToLower() == "union")
                     {
                         LagUnionEgenskaper(prikknivå, elm1, att, ot, standard);
-                        
+
                     }
                     else if (att.Type.ToLower() == "integer" || att.Type.ToLower() == "characterstring" || att.Type.ToLower() == "real" || att.Type.ToLower() == "date" || att.Type.ToLower() == "datetime" || att.Type.ToLower() == "boolean")
                     {
@@ -548,11 +573,11 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         break;
                 }
             }
-            
+
 
             Element source = _repository.GetElementByID(connector.SupplierID);
             Element destination = _repository.GetElementByID(connector.ClientID);
-            
+
             if (typeAssosiasjon.Length == 0)
             {
                 _repository.WriteOutput("System", "ADVARSEL: Det er ikke definert type SOSI assosiasjon mellom " + source.Name + " og " + destination.Name + " assosiasjonen. Behandles som REF.", 0);
@@ -582,7 +607,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         assosiasjon.SOSI_Navn = "";
                     }
                     else assosiasjon.SOSI_Navn = prikknivå + sosi_navn_ref;
-                   
+
                     assosiasjon.Multiplisitet = "[" + connector.ClientEnd.Cardinality + "]";
                     assosiasjon.UML_Navn = connector.ClientEnd.Role + "(rolle)";
                     //Fikse multiplisitet
@@ -602,11 +627,11 @@ namespace Arkitektum.Kartverket.SOSI.Model
                             item.Multiplisitet = item.Multiplisitet.Replace("[0..]", "[0..*]");
                             item.Multiplisitet = item.Multiplisitet.Replace("[1..]", "[1..*]");
                             item.Multiplisitet = item.Multiplisitet.Replace("[1]", "[1..1]");
-                            
+
                         }
                         assosiasjon.Egenskaper = ref_sosinavn.Egenskaper;
                         retur.Add(assosiasjon);
-                        
+
                     }
                     else _repository.WriteOutput("System", "FEIL: Finner ikke primærnøkkel for " + connector.ClientEnd.Role + " på " + destination.Name, 0);
                 }
@@ -643,16 +668,16 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         addSupplierEnd(prikknivå, connector, retur, source, destination);
                     }
                 }
-                
+
 
             }
             else
             {
-                
+
                 if (typeAssosiasjon == "primærnøkler")
                 {
                     Gruppeelement assosiasjon = new Gruppeelement();
-                    
+
                     string sosi_navn_ref="";
                     foreach (var tag in connector.SupplierEnd.TaggedValues)
                     {
@@ -669,7 +694,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         assosiasjon.SOSI_Navn = "";
                     }
                     else assosiasjon.SOSI_Navn = prikknivå + sosi_navn_ref;
-                    
+
                     assosiasjon.SOSI_Navn = prikknivå + sosi_navn_ref;
                     assosiasjon.Multiplisitet = "[" + connector.SupplierEnd.Cardinality + "]";
                     assosiasjon.UML_Navn = connector.SupplierEnd.Role + "(rolle)";
@@ -693,9 +718,9 @@ namespace Arkitektum.Kartverket.SOSI.Model
                             item.Multiplisitet = item.Multiplisitet.Replace("[1]", "[1..1]");
 
 
-                            
+
                         }
-                        
+
                         assosiasjon.Egenskaper=ref_sosinavn.Egenskaper;
                         retur.Add(assosiasjon);
                     }
@@ -720,7 +745,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
                         eg.TillatteVerdier = new List<string>();
                         retur.Add(eg);
-                    } 
+                    }
                 }
                 else
                 {
@@ -814,7 +839,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
             if (is_sosi_navn == false) _repository.WriteOutput("System", "FEIL: Mangler angivelse av tagged value sosi_navn på assosiasjonsende " + connector.SupplierEnd.Role + " mellom " + source.Name + " og " + destination.Name, 0);
         }
 
-     
+
 
         private SosiEgenskapRetur FinnFremmednøkkel(Element destination, Element source, Connector connector, ConnectorEnd end)
         {
@@ -866,8 +891,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     }
                 }
             }
-            else 
-            { 
+            else
+            {
 
                 foreach (global::EA.Attribute att in source.Attributes)
                 {
@@ -875,7 +900,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     string sosi_lengde = "";
                     string sosi_datatype = "";
                     string sosi_fremmednøkkel = "";
-                    
+
                     foreach (object tag in att.TaggedValues)
                     {
 
@@ -905,13 +930,13 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     }
                 }
             }
-            
+
             return retur;
         }
 
         private SosiEgenskapRetur FinnPrimærnøkkel(Element source, string prikknivå, string standard, Objekttype ot, List<String> arvedeobjekterSjekket)
         {
-           
+
             SosiEgenskapRetur retur = null;
             retur = new SosiEgenskapRetur();
             retur.Egenskaper = new List<AbstraktEgenskap>();
@@ -932,36 +957,36 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 }
                 if (erPrimærnøkkel)
                 {
-                    
-                        if (att.Type.ToLower() == "integer" || att.Type.ToLower() == "characterstring" || att.Type.ToLower() == "real" || att.Type.ToLower() == "date" || att.Type.ToLower() == "datetime" || att.Type.ToLower() == "boolean")
-                        {
-                            Basiselement eg = LagEgenskap(prikknivå, att, standard);
-                            retur.Egenskaper.Add(eg);
-                        }
-                        else //Kompleks type(datatype) som primærnøkkel
-                        {
 
-                            if (att.ClassifierID != 0) 
+                    if (att.Type.ToLower() == "integer" || att.Type.ToLower() == "characterstring" || att.Type.ToLower() == "real" || att.Type.ToLower() == "date" || att.Type.ToLower() == "datetime" || att.Type.ToLower() == "boolean")
+                    {
+                        Basiselement eg = LagEgenskap(prikknivå, att, standard);
+                        retur.Egenskaper.Add(eg);
+                    }
+                    else //Kompleks type(datatype) som primærnøkkel
+                    {
+
+                        if (att.ClassifierID != 0)
+                        {
+                            Element elm1 = _repository.GetElementByID(att.ClassifierID);
+                            if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration" || elm1.Type.ToLower() == "enumeration")
                             {
-                                Element elm1 = _repository.GetElementByID(att.ClassifierID);
-                                if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration" || elm1.Type.ToLower() == "enumeration")
-                                {
-                                    Basiselement tmp = LagKodelisteEgenskap(prikknivå, elm1, att, ot.OCLconstraints);
-                                    retur.Egenskaper.Add(tmp);
-                                }
-                                else
-                                {
-                                    Gruppeelement tmp = LagGruppeelement(elm1, att, prikknivå, ot);
-                                    retur.Egenskaper.Add(tmp);
-                                }
+                                Basiselement tmp = LagKodelisteEgenskap(prikknivå, elm1, att, ot.OCLconstraints);
+                                retur.Egenskaper.Add(tmp);
                             }
-                            else _repository.WriteOutput("System", "FEIL: Primærnøkkel er feil definert på : " + source.Name, 0);
-                           
+                            else
+                            {
+                                Gruppeelement tmp = LagGruppeelement(elm1, att, prikknivå, ot);
+                                retur.Egenskaper.Add(tmp);
+                            }
                         }
-                   
-                    
+                        else _repository.WriteOutput("System", "FEIL: Primærnøkkel er feil definert på : " + source.Name, 0);
+
+                    }
+
+
                 }
-               
+
                 foreach (Connector connector in source.Connectors)
                 {
                     if (connector.MetaType == "Generalization")
@@ -975,18 +1000,18 @@ namespace Arkitektum.Kartverket.SOSI.Model
                                 arvedeobjekterSjekket.Add(elmg.Name);
                                 retur.Egenskaper.AddRange(ret.Egenskaper);
                             }
-                            
+
                         }
 
                     }
                 }
-               
+
 
             }
             return retur;
         }
 
-       
+
 
         private Gruppeelement LagGruppeelement(Element elm, global::EA.Attribute att2, string prikknivå, Objekttype parentObjekttype)
         {
@@ -994,7 +1019,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
             ot.Egenskaper = new List<AbstraktEgenskap>();
             ot.OCLconstraints = new List<Beskrankning>();
             bool sosi_navn = false;
-            
+
             ot.Notat = elm.Notes;
             ot.SOSI_Navn = prikknivå;
             string standard = HentApplicationSchemaPakkeNavn(elm);
@@ -1020,7 +1045,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 }
             }
             if (sosi_navn == false)
-            {   
+            {
                 foreach (TaggedValue theTags in elm.TaggedValues)
                 {
                     switch (theTags.Name.ToLower())
@@ -1116,7 +1141,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         List<AbstraktEgenskap> eg = LagConnectorEgenskaper(prikknivå, connector, elm, standard, parentObjekttype);
                         ot.Egenskaper.AddRange(eg);
                     }
-                    
+
                 }
                 else if (connector.MetaType == "Generalization")
                 {
@@ -1133,12 +1158,12 @@ namespace Arkitektum.Kartverket.SOSI.Model
             }
             return ot;
         }
-        
+
 
         private Gruppeelement LagGruppeelementKomposisjon(global::EA.Connector conn, string prikknivå, Objekttype pot)
         {
             Element elm = _repository.GetElementByID(conn.ClientID);
-            
+
             Gruppeelement ot = new Gruppeelement();
             ot.Egenskaper = new List<AbstraktEgenskap>();
             ot.OCLconstraints = new List<Beskrankning>();
@@ -1149,7 +1174,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
             string standard = HentApplicationSchemaPakkeNavn(elm);
             ot.Standard = standard;
             ot.Multiplisitet = "["+ conn.ClientEnd.Cardinality + "]";
-            
+
             foreach (object tag in conn.ClientEnd.TaggedValues)
             {
                 switch (((string)((dynamic)tag).Tag).ToLower())
@@ -1183,7 +1208,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
                 if (att.ClassifierID != 0)
                 {
-                   
+
                     Element elm1 = _repository.GetElementByID(att.ClassifierID);
 
                     var type = GetAttributeType(att.Type);
@@ -1246,7 +1271,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         List<AbstraktEgenskap> eg = LagConnectorEgenskaper(prikknivå, connector, elm, standard, pot);
                         ot.Egenskaper.AddRange(eg);
                     }
-                    
+
                 }
                 if (connector.MetaType == "Generalization")
                 {
@@ -1266,7 +1291,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
         private void LagUnionEgenskaperForGruppeelement(string prikknivå, Element elm, global::EA.Attribute att1, Objekttype pot, string standard, Gruppeelement ot)
         {
             List<string> attnavn = new List<string>();
-            
+
 
             foreach (global::EA.Constraint constr in elm.Constraints)
             {
@@ -1291,8 +1316,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
                 if (att.ClassifierID != 0)
                 {
-                   Element elm1 = _repository.GetElementByID(att.ClassifierID);
-                   if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration" || elm1.Type.ToLower() == "enumeration")
+                    Element elm1 = _repository.GetElementByID(att.ClassifierID);
+                    if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration" || elm1.Type.ToLower() == "enumeration")
                     {
                         Basiselement eg = LagKodelisteEgenskap(prikknivå + ".", elm1, att, pot.OCLconstraints);
                         ot.Egenskaper.Add(eg);
@@ -1307,7 +1332,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
                         ot.Egenskaper.Add(eg);
                     }
-                   
+
                     else if (type == "flate" || type == "punkt" || type == "kurve")
                     {
 
@@ -1328,20 +1353,20 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 }
 
             }
-           
+
             Beskrankning bs = new Beskrankning();
             bs.Navn = "Union " + elm.Name;
             bs.Notat = "et av elementene " + String.Join(",", attnavn.ToArray(), 0, attnavn.Count) + " er påkrevet";
             pot.OCLconstraints.Add(bs);
 
-            
+
 
         }
 
         private string HentApplicationSchemaPakkeNavn(Element elm)
         {
             string pnavn = "FIX";
-           
+
             if (elm.PackageID != 0)
             {
                 Package pk = _repository.GetPackageByID(elm.PackageID);
@@ -1351,11 +1376,11 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     {
                         string status = "";
                         if (pk.Element.Stereotype.ToLower() == "underarbeid") status = " (under arbeid)";
-                        
+
                         pnavn = pk.Element.Name + status;
                         string kortnavn = "";
                         string versjon = "";
-                       
+
                         foreach (TaggedValue tag in pk.Element.TaggedValues)
                         {
                             switch (tag.Name.ToLower())
@@ -1380,7 +1405,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
         }
         private Basiselement LagKodelisteEgenskap(string prikknivå, Element elm, global::EA.Attribute att, List<Beskrankning> oclliste)
         {
-            
+
             try
             {
 
@@ -1389,7 +1414,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 eg.SOSI_Navn = prikknivå;
                 eg.Notat = att.Notes;
                 eg.Standard = HentApplicationSchemaPakkeNavn(elm);
-                
+
                 eg.Multiplisitet = "[" + att.LowerBound + ".." + att.UpperBound + "]";
                 bool sosi_navn = false;
                 bool sosi_lengde = false;
@@ -1397,7 +1422,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 eg.Datatype = "T";
                 eg.TillatteVerdier = new List<string>();
                 eg.Operator = "=";
-                
+
                 bool beskrankVerdier = false;
 
                 foreach (Beskrankning be in oclliste)
@@ -1472,7 +1497,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 {
                     switch (((string)((dynamic)tag).Name).ToLower())
                     {
-                       
+
                         case "sosi_navn":
                             eg.SOSI_Navn = prikknivå + ((dynamic)tag).Value;
                             if (((dynamic)tag).Value.Length > 0) sosi_navn = true;
@@ -1525,7 +1550,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                                 eg.Datatype = datatype;
                                 if (((dynamic)theTags2).Value.Length > 0) sosi_datatype = true;
                                 break;
-                           
+
                         }
 
                     }
@@ -1548,23 +1573,23 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 }
                 if (sosi_navn == false) _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_navn på kodeliste " + elm.Name + ", attributt: " + att.Name, 0);
                 if (sosi_lengde == false) _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_lengde på kodeliste " + elm.Name + ", attributt: " + att.Name, 0);
-                
+
                 foreach (Connector connector in elm.Connectors)
                 {
                     if (connector.MetaType == "Generalization")
                     {
 
                         Element elmg = _repository.GetElementByID(connector.SupplierID);
-                        
+
                         if (elm.Name != elmg.Name)
                         {
                             foreach (global::EA.Attribute a in elmg.Attributes)
                             {
-                               
+
                                 if (a.Default.Trim().Length > 0) eg.TillatteVerdier.Add(a.Default.Trim());
                                 else
                                 {
-                                   
+
                                     bool sosi_verdi = false;
                                     string verdi = "";
                                     foreach (object tag in a.TaggedValues)
@@ -1582,9 +1607,9 @@ namespace Arkitektum.Kartverket.SOSI.Model
                                     if (sosi_verdi && verdi.Trim().Length > 0) eg.TillatteVerdier.Add(verdi.Trim());
                                     else
                                     {
-                                       
+
                                         eg.TillatteVerdier.Add(a.Name);
-                                        
+
                                     }
                                 }
 
@@ -1597,7 +1622,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
             catch (Exception e)
             {
                _repository.WriteOutput("System", "FEIL: " +e.Message + " " + e.Source,0);
-               return null;
+                return null;
             }
 
         }
@@ -1610,11 +1635,11 @@ namespace Arkitektum.Kartverket.SOSI.Model
             eg.SOSI_Navn = prikknivå;
             eg.Notat = att.Notes;
             eg.Standard = standard;
-            
+
             eg.Multiplisitet = "[" + att.LowerBound + ".." + att.UpperBound + "]";
             eg.TillatteVerdier = new List<string>();
             eg.Datatype = "FIX";
-            
+
             bool basistypeIkkeFunnet = true;
 
             switch (att.Type.ToLower())
@@ -1622,31 +1647,31 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 case "characterstring":
                     eg.Datatype = "T";
                     if (att.Default.Length > 0) eg.TillatteVerdier.Add(att.Default);
-                    
+
                     basistypeIkkeFunnet = false;
                     break;
                 case "integer":
                     eg.Datatype = "H";
                     if (att.Default.Length > 0) eg.TillatteVerdier.Add(att.Default);
-                    
+
                     basistypeIkkeFunnet = false;
                     break;
                 case "real":
                     eg.Datatype = "D";
                     if (att.Default.Length > 0) eg.TillatteVerdier.Add(att.Default);
-                    
+
                     basistypeIkkeFunnet = false;
                     break;
                 case "date":
                     eg.Datatype = "DATO";
                     if (att.Default.Length > 0) eg.TillatteVerdier.Add(att.Default);
-                   
+
                     basistypeIkkeFunnet = false;
                     break;
                 case "datetime":
                     eg.Datatype = "DATOTID";
                     if (att.Default.Length > 0) eg.TillatteVerdier.Add(att.Default);
-                    
+
                     basistypeIkkeFunnet = false;
                     break;
                 case "boolean":
@@ -1654,12 +1679,12 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     eg.Operator = "=";
                     eg.TillatteVerdier.Add("JA");
                     eg.TillatteVerdier.Add("NEI");
-                   
+
                     basistypeIkkeFunnet = false;
                     break;
                 case "flate":
                     eg.Datatype = "FLATE";
-                    
+
                     basistypeIkkeFunnet = false;
                     break;
                 case "punkt":
@@ -1668,7 +1693,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     break;
                 case "kurve":
                     eg.Datatype = "KURVE";
-                    
+
                     basistypeIkkeFunnet = false;
                     break;
             }
@@ -1680,15 +1705,15 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
             foreach (object theTags2 in att.TaggedValues)
             {
-                
+
                 string navn = (string)((dynamic)theTags2).Name;
 
                 switch (navn.ToLower())
                 {
-                   
+
                     case "sosi_lengde":
                         eg.Datatype = datatype + ((dynamic)theTags2).Value;
-                      
+
                         break;
                     case "sosi_navn":
                         string verdi = (string)((dynamic)theTags2).Value;
@@ -1722,7 +1747,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
             foreach (object theTags2 in att.TaggedValues)
             {
-                
+
                 string navn = (string)((dynamic)theTags2).Name;
 
                 switch (navn.ToLower())
@@ -1739,9 +1764,9 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 }
 
             }
-            if (sosi_navn == false && att.ClassifierID != 0) 
-            { 
-           
+            if (sosi_navn == false && att.ClassifierID != 0)
+            {
+
                 Element elm = _repository.GetElementByID(att.ClassifierID);
 
                 //Finne SOSI_navn på klasse
@@ -1749,7 +1774,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 {
                     switch (((string)((dynamic)theTags2).Name).ToLower())
                     {
-                        
+
                         case "sosi_navn":
                             eg.SOSI_Navn = prikknivå + ((dynamic)theTags2).Value;
                             if (((dynamic)theTags2).Value.Length > 0) sosi_navn = true;
@@ -1770,7 +1795,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
             Package valgtPakke = _repository.GetTreeSelectedPackage();
 
-           
+
 
             foreach (Element el in valgtPakke.Elements)
             {
@@ -1781,7 +1806,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 }
 
             }
-           
+
             HentKodelisterFraSubpakker(kList, valgtPakke);
 
 
@@ -1799,7 +1824,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         LagSosiKodeliste(ele, kList);
                     }
                 }
-                
+
                 HentKodelisterFraSubpakker(kList, pk);
             }
         }
@@ -1811,18 +1836,18 @@ namespace Arkitektum.Kartverket.SOSI.Model
             SosiKodeliste kl = new SosiKodeliste();
             kl.Verdier = new List<SosiKode>();
             kl.Navn = e.Name;
-            
+
             foreach (global::EA.Attribute a in e.Attributes)
             {
                 SosiKode k = new SosiKode();
 
                 k.Navn = a.Name;
                 k.Beskrivelse = a.Notes.Trim();
-                
+
                 if (a.Default.Trim().Length > 0) k.SosiVerdi = a.Default.Trim();
                 else
                 {
-                    
+
                     bool sosi_verdi = false;
                     string verdi = "";
                     foreach (object tag in a.TaggedValues)
@@ -1833,7 +1858,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                             case "sosi_verdi":
                                 verdi = ((dynamic)tag).Value;
                                 sosi_verdi = true;
-                                
+
                                 break;
                         }
 
@@ -1845,7 +1870,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     }
                     else
                     {
-                       
+
                         k.SosiVerdi = a.Name;
                     }
                 }
