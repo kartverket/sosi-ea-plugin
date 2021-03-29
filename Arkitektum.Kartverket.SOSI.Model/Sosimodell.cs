@@ -94,6 +94,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
             {
                 if (objekttype.HarGeometri("flate"))
                 {
+                    skalLeggeTilAvgrensning = true;
+
                     foreach (string avgrensesAv in objekttype.AvgrensesAv)
                     {
                         Objekttype avgrensesAvObjekttype = FinnObjekttypeMedNavn(objekttyper, avgrensesAv);
