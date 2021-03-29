@@ -90,7 +90,6 @@ namespace Arkitektum.Kartverket.SOSI.Model
         private bool SkalLeggeTilFlateavgrensning(List<Objekttype> objekttyper)
         {
             bool skalLeggeTilAvgrensning = true;
-            bool modelHarFlate = objekttyper.Any(o => o.HarGeometri("flate"));
             foreach(Objekttype objekttype in objekttyper)
             {
                 if (objekttype.HarGeometri("flate"))
@@ -111,7 +110,6 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         }
                     }
                 }
-                else if(modelHarFlate) skalLeggeTilAvgrensning = true;
                 else skalLeggeTilAvgrensning = false;
             }
 
