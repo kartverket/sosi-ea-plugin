@@ -90,7 +90,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
         private bool SkalLeggeTilFlateavgrensning(List<Objekttype> objekttyper)
         {
             bool skalLeggeTilAvgrensning = true;
-            foreach(Objekttype objekttype in objekttyper)
+            bool modelHarFlate = objekttyper.Any(o => o.HarGeometri("flate"));
+            foreach (Objekttype objekttype in objekttyper)
             {
                 if (objekttype.HarGeometri("flate"))
                 {
@@ -112,6 +113,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         }
                     }
                 }
+                else if (modelHarFlate) skalLeggeTilAvgrensning = true;
                 else skalLeggeTilAvgrensning = false;
             }
 
@@ -194,7 +196,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
             objekttype.Egenskaper = new List<AbstraktEgenskap>();
             objekttype.Geometrityper = new List<string>();
             objekttype.OCLconstraints = new List<Beskrankning>();
-            objekttype.Avgrenser= new List<string>();
+            objekttype.Avgrenser = new List<string>();
             objekttype.AvgrensesAv = new List<string>();
 
             objekttype.UML_Navn = element.Name;
@@ -367,15 +369,17 @@ namespace Arkitektum.Kartverket.SOSI.Model
             {
                 var name = constraint.Name;
 
-                if (name.StartsWith("KanAvgrensesAv")) {
+                if (name.StartsWith("KanAvgrensesAv"))
+                {
 
                     var objectTypeNames = name.Remove(0, 15);
 
                     var objectTypes = objectTypeNames.Split(',');
-                    foreach(var objectType in objectTypes) { 
+                    foreach (var objectType in objectTypes)
+                    {
                         beskrankninger.Add(objectType.Trim());
                     }
-                } 
+                }
             }
             return beskrankninger;
 
@@ -477,7 +481,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         else
                         {
                             IEnumerable<string> arvnavn = HentRealiserbareObjektarvListe(elm);
-                            if (arvnavn.Count() > 0 )
+                            if (arvnavn.Count() > 0)
                                 objektnavn.AddRange(arvnavn);
                         }
                     }
@@ -503,7 +507,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 {
                     Element elm1 = _repository.GetElementByID(att.ClassifierID);
 
-                    if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration"|| elm1.Type.ToLower() == "enumeration")
+                    if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration" || elm1.Type.ToLower() == "enumeration")
                     {
                         Basiselement eg = LagKodelisteEgenskap(prikknivå + ".", elm1, att, ot.OCLconstraints);
                         ot.Egenskaper.Add(eg);
@@ -526,7 +530,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     }
                     else
                     {
-                        Gruppeelement tmp = LagGruppeelement(elm1, att, prikknivå,ot);
+                        Gruppeelement tmp = LagGruppeelement(elm1, att, prikknivå, ot);
                         ot.Egenskaper.Add(tmp);
                     }
                 }
@@ -593,7 +597,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 if (typeAssosiasjon == "primærnøkler")
                 {
                     Gruppeelement assosiasjon = new Gruppeelement();
-                    string sosi_navn_ref="";
+                    string sosi_navn_ref = "";
                     foreach (var tag in connector.ClientEnd.TaggedValues)
                     {
                         switch (((string)((dynamic)tag).Tag).ToLower())
@@ -680,7 +684,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 {
                     Gruppeelement assosiasjon = new Gruppeelement();
 
-                    string sosi_navn_ref="";
+                    string sosi_navn_ref = "";
                     foreach (var tag in connector.SupplierEnd.TaggedValues)
                     {
                         switch (((string)((dynamic)tag).Tag).ToLower())
@@ -707,7 +711,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     assosiasjon.Multiplisitet = assosiasjon.Multiplisitet.Replace("[1]", "[1..1]");
 
                     List<String> sjekkedeObjekter = new List<string>();
-                    SosiEgenskapRetur ref_sosinavn = FinnPrimærnøkkel(source, prikknivå+".", standard, ot, sjekkedeObjekter);
+                    SosiEgenskapRetur ref_sosinavn = FinnPrimærnøkkel(source, prikknivå + ".", standard, ot, sjekkedeObjekter);
                     if (ref_sosinavn != null)
                     {
                         foreach (AbstraktEgenskap item in ref_sosinavn.Egenskaper)
@@ -723,7 +727,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
                         }
 
-                        assosiasjon.Egenskaper=ref_sosinavn.Egenskaper;
+                        assosiasjon.Egenskaper = ref_sosinavn.Egenskaper;
                         retur.Add(assosiasjon);
                     }
                     else _repository.WriteOutput("System", "FEIL: Finner ikke primærnøkkel for " + connector.SupplierEnd.Role + " på " + source.Name, 0);
@@ -777,8 +781,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
         private void addClientEnd(string prikknivå, Connector connector, List<AbstraktEgenskap> retur, Element source, Element destination)
         {
-            bool is_sosi_navn=false;
-            string sosi_navn="FIX";
+            bool is_sosi_navn = false;
+            string sosi_navn = "FIX";
             Basiselement eg = new Basiselement();
             eg.Datatype = "REF";
             eg.UML_Navn = connector.ClientEnd.Role + "(rolle)";
@@ -927,7 +931,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         //Finnes alt så den skal ikke lages..
                         break;
                     }
-                    else { 
+                    else
+                    {
                         _repository.WriteOutput("System", "FEIL: Ufullstendig assosiasjon: " + end.Role, 0);
                     }
                 }
@@ -1026,7 +1031,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
             ot.SOSI_Navn = prikknivå;
             string standard = HentApplicationSchemaPakkeNavn(elm);
             ot.Standard = standard;
-            if (att2 == null) { 
+            if (att2 == null)
+            {
                 ot.Multiplisitet = "[1..1]";
                 ot.UML_Navn = elm.Name;
             }
@@ -1152,7 +1158,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
                     if (elm.Name != elmg.Name)
                     {
-                        Gruppeelement tmp2 = LagGruppeelement(elmg, null, prikknivå , parentObjekttype);
+                        Gruppeelement tmp2 = LagGruppeelement(elmg, null, prikknivå, parentObjekttype);
                         ot.Inkluder = tmp2;
                     }
 
@@ -1175,7 +1181,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
             ot.SOSI_Navn = prikknivå;
             string standard = HentApplicationSchemaPakkeNavn(elm);
             ot.Standard = standard;
-            ot.Multiplisitet = "["+ conn.ClientEnd.Cardinality + "]";
+            ot.Multiplisitet = "[" + conn.ClientEnd.Cardinality + "]";
 
             foreach (object tag in conn.ClientEnd.TaggedValues)
             {
@@ -1396,7 +1402,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
                             }
 
                         }
-                        if (kortnavn.Length > 0) {
+                        if (kortnavn.Length > 0)
+                        {
                             pnavn = kortnavn + " " + versjon + status;
                         }
                     }
@@ -1483,7 +1490,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                                 }
 
                             }
-                            if (sosi_verdi && verdi.Trim().Length>0) eg.TillatteVerdier.Add(verdi.Trim());
+                            if (sosi_verdi && verdi.Trim().Length > 0) eg.TillatteVerdier.Add(verdi.Trim());
                             else
                             {
                                 eg.TillatteVerdier.Add(a.Name);
@@ -1623,7 +1630,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
             }
             catch (Exception e)
             {
-               _repository.WriteOutput("System", "FEIL: " +e.Message + " " + e.Source,0);
+                _repository.WriteOutput("System", "FEIL: " + e.Message + " " + e.Source, 0);
                 return null;
             }
 
@@ -1804,7 +1811,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
                 if (el.Stereotype.ToLower() == "codelist" || el.Stereotype.ToLower() == "enumeration" || el.Type.ToLower() == "enumeration")
                 {
-                    LagSosiKodeliste(el,kList);
+                    LagSosiKodeliste(el, kList);
                 }
 
             }
