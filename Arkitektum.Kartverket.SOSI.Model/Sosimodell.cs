@@ -90,7 +90,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
         private bool SkalLeggeTilFlateavgrensning(List<Objekttype> objekttyper)
         {
             bool skalLeggeTilAvgrensning = true;
-            bool modelHarFlate = objekttyper.Any(o => o.HarGeometri("flate"));
+            bool modelAvgrensesAv = false;
             foreach (Objekttype objekttype in objekttyper)
             {
                 if (objekttype.HarGeometri("flate"))
@@ -105,6 +105,9 @@ namespace Arkitektum.Kartverket.SOSI.Model
                             LoggDebug("Finner ikke objektet [{avgrensesAv}] som avgrenser objekttypen [{objekttype.UML_Navn}]");
                             continue;
                         }
+
+                        modelAvgrensesAv = true;
+
                         if (avgrensesAvObjekttype.ErEnFlateavgrensning())
                         {
                             Logg($"Flaten i {objekttype.UML_Navn} blir avgrenset av kurven i {avgrensesAvObjekttype.UML_Navn}. Legger ikke til egen flateavgrensning.");
@@ -113,7 +116,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         }
                     }
                 }
-                else if (modelHarFlate) skalLeggeTilAvgrensning = true;
+                else if (!modelAvgrensesAv) skalLeggeTilAvgrensning = true;
                 else skalLeggeTilAvgrensning = false;
             }
 
