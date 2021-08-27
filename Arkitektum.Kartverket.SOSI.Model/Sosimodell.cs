@@ -31,10 +31,10 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
             _objekttyper = LagObjekttyperForElementerIPakke(valgtPakke);
 
-            if (SkalLeggeTilFlateavgrensning(_objekttyper))
+            if (SkalLeggeTilFlateavgrensning(_objekttyper, out var navnPaFlaterSomManglerFlateavgrensning))
             {
                 Logg("Legger til Flateavgrensning");
-                _objekttyper.Add(OpprettFlateavgrensning(HentApplicationSchemaPakkeNavn(valgtPakke.Element)));
+                _objekttyper.Add(OpprettFlateavgrensning(HentApplicationSchemaPakkeNavn(valgtPakke.Element), navnPaFlaterSomManglerFlateavgrensning));
             }
 
             if (SkalLeggeTilKantUtsnitt(_objekttyper))
@@ -87,16 +87,15 @@ namespace Arkitektum.Kartverket.SOSI.Model
             };
         }
 
-        private bool SkalLeggeTilFlateavgrensning(List<Objekttype> objekttyper)
+        private bool SkalLeggeTilFlateavgrensning(List<Objekttype> objekttyper, out List<string> navnPaFlaterSomManglerFlateavgrensning)
         {
-            bool skalLeggeTilAvgrensning = true;
-            bool modelAvgrensesAv = false;
+            var flaterSomManglerFlateavgrensning = objekttyper.Where(o => o.HarGeometri("flate") && o.AvgrensesAv.Count == 0).ToList();
+            navnPaFlaterSomManglerFlateavgrensning = new List<string>();
+
             foreach (Objekttype objekttype in objekttyper)
             {
                 if (objekttype.HarGeometri("flate"))
                 {
-                    skalLeggeTilAvgrensning = true;
-
                     foreach (string avgrensesAv in objekttype.AvgrensesAv)
                     {
                         Objekttype avgrensesAvObjekttype = FinnObjekttypeMedNavn(objekttyper, avgrensesAv);
@@ -106,21 +105,23 @@ namespace Arkitektum.Kartverket.SOSI.Model
                             continue;
                         }
 
-                        modelAvgrensesAv = true;
-
                         if (avgrensesAvObjekttype.ErEnFlateavgrensning())
                         {
                             Logg($"Flaten i {objekttype.UML_Navn} blir avgrenset av kurven i {avgrensesAvObjekttype.UML_Navn}. Legger ikke til egen flateavgrensning.");
-                            skalLeggeTilAvgrensning = false;
                             break;
                         }
                     }
                 }
-                else if (!modelAvgrensesAv) skalLeggeTilAvgrensning = true;
-                else skalLeggeTilAvgrensning = false;
             }
 
-            return skalLeggeTilAvgrensning;
+            foreach (var objekttype in flaterSomManglerFlateavgrensning)
+            {
+                Logg($"Flaten i {objekttype.UML_Navn} mangler avgrensninger, legger til egen flateavgrensning");
+                objekttype.AvgrensesAv.Add("Flateavgrensning");
+                navnPaFlaterSomManglerFlateavgrensning.Add(objekttype.UML_Navn);
+            }
+
+            return flaterSomManglerFlateavgrensning.Any();
         }
 
         private void LoggDebug(string melding)
@@ -140,7 +141,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
             return objekttyper.FirstOrDefault(o => string.Equals(o.UML_Navn, navn, StringComparison.InvariantCultureIgnoreCase));
         }
 
-        private static Objekttype OpprettFlateavgrensning(string standard)
+        private static Objekttype OpprettFlateavgrensning(string standard, List<string> navnPaFlaterSomManglerFlateavgrensning)
         {
             return new Objekttype()
             {
@@ -165,7 +166,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         Navn = "Flateavgrensning",
                         Notat = "Objekttypen er lagt til for å avgrense flaten for å tilfredsstille geometrimodellen i SOSI-formatet."
                     }
-                }
+                },
+                Avgrenser = navnPaFlaterSomManglerFlateavgrensning,
             };
         }
 
