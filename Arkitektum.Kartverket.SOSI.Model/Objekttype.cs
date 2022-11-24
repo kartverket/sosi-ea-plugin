@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Arkitektum.Kartverket.SOSI.Model
 {
@@ -62,9 +61,9 @@ namespace Arkitektum.Kartverket.SOSI.Model
             Egenskaper.Add(egenskap);
         }
 
-        public void LeggTilBeskrankninger(List<Beskrankning> list)
+        public void LeggTilBeskrankninger(IEnumerable<Beskrankning> beskrankninger)
         {
-            foreach (Beskrankning beskrankning in list)
+            foreach (var beskrankning in beskrankninger)
             {
                 LeggTilBeskrankning(beskrankning);
             }

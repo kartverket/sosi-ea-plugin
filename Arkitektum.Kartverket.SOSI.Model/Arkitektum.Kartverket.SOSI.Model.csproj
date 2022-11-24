@@ -60,7 +60,14 @@
     <Compile Include="SosiKode.cs" />
     <Compile Include="SosiKodeliste.cs" />
     <Compile Include="Sosimodell.cs" />
+    <Compile Include="Utils\AttributeExtensions.cs" />
+    <Compile Include="Utils\AttributeTypeMapper.cs" />
+    <Compile Include="Utils\CodelistHelper.cs" />
+    <Compile Include="Utils\ConnectorExtensions.cs" />
+    <Compile Include="Utils\ElementExtensions.cs" />
+    <Compile Include="Utils\KjentTypeMapper.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

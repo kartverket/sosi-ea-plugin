@@ -143,6 +143,18 @@ namespace Arkitektum.Kartverket.SOSI.Model
             return _basiselement;
         }
 
+        public BasiselementBuilder MedDatatype(string datatype)
+        {
+            _basiselement.Datatype = datatype;
+            return this;
+        }
+
+        public BasiselementBuilder MedOperator(string @operator)
+        {
+            _basiselement.Operator = @operator;
+            return this;
+        }
+
         private void SettSosiNavn()
         {
             string sosiNavn = _repositoryHelper.GetSosiNameForAttribute(_attributt);

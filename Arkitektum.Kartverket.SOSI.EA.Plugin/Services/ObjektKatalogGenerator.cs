@@ -29,7 +29,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
         /// <param name="objekttyper"></param>
         /// <param name="erFag"></param>
         /// <param name="kodelister"></param>
-        public XDocument LagObjektKatalog(string versjon, string org, string pers, string navn, string beskrivelse, List<Objekttype> objekttyper, bool erFag, List<SosiKodeliste> kodelister)
+        public XDocument LagObjektKatalog(string versjon, string org, string pers, string navn, string beskrivelse, List<Objekttype> objekttyper, bool erFag, IEnumerable<SosiKodeliste> kodelister)
         {
             var doc = new XDocument(
                 new XElement(_gfc + "FC_FeatureCatalogue", 

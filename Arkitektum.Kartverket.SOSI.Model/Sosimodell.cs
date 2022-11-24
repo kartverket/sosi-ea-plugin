@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
 using EA;
 using Attribute = EA.Attribute;
 
@@ -9,12 +8,6 @@ namespace Arkitektum.Kartverket.SOSI.Model
 {
     public class Sosimodell
     {
-        private static readonly Dictionary<string, KjentType> KjenteTyper = new Dictionary<string, KjentType>
-        {
-            {"TM_Instant", new KjentType("TM_Instant", "DATOTID") },
-            {"TM_Period", new KjentType("TM_Period", "PERIODE") }
-        };
-
         private readonly Repository _repository;
 
         private List<Objekttype> _objekttyper;
@@ -173,7 +166,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
         private List<Objekttype> LagObjekttyperForElementerIPakke(Package pakke)
         {
-            List<Objekttype> objekttyper = new List<Objekttype>();
+            var objekttyper = new List<Objekttype>();
 
             foreach (Element element in pakke.Elements)
             {
@@ -195,41 +188,45 @@ namespace Arkitektum.Kartverket.SOSI.Model
         }
 
 
-        public Objekttype LagObjekttype(Element element, string prikknivå, bool lagobjekttype, List<Beskrankning> oclfraSubObjekt)
+        public Objekttype LagObjekttype(Element element, string prikknivå, bool lagObjekttype, List<Beskrankning> oclFraSubObjekt)
         {
-            Objekttype objekttype = new Objekttype();
-            objekttype.Egenskaper = new List<AbstraktEgenskap>();
-            objekttype.Geometrityper = new List<string>();
-            objekttype.OCLconstraints = new List<Beskrankning>();
-            objekttype.Avgrenser = new List<string>();
-            objekttype.AvgrensesAv = new List<string>();
+            var standard = HentApplicationSchemaPakkeNavn(element);
 
-            objekttype.UML_Navn = element.Name;
-            objekttype.Notat = element.Notes;
-            objekttype.SOSI_Navn = prikknivå;
-            string standard = HentApplicationSchemaPakkeNavn(element);
-            objekttype.Standard = standard;
-            if (lagobjekttype)
+            var objekttype = new Objekttype
             {
-                Basiselement basiselement = new Basiselement();
-                basiselement.Standard = standard;
-                basiselement.SOSI_Navn = prikknivå + "OBJTYPE";
-                basiselement.UML_Navn = "";
+                Egenskaper = new List<AbstraktEgenskap>(),
+                Geometrityper = new List<string>(),
+                OCLconstraints = new List<Beskrankning>(),
+                Avgrenser = new List<string>(),
+                AvgrensesAv = new List<string>(),
+                UML_Navn = element.Name,
+                Notat = element.Notes,
+                SOSI_Navn = prikknivå,
+                Standard = standard
+            };
 
-                basiselement.Operator = "=";
-                basiselement.TillatteVerdier = new List<string>();
-                basiselement.TillatteVerdier.Add(element.Name);
-                basiselement.Multiplisitet = "[1..1]";
-                basiselement.Datatype = "T32";
+            if (lagObjekttype)
+            {
+                var basiselement = new Basiselement
+                {
+                    Standard = standard,
+                    SOSI_Navn = prikknivå + "OBJTYPE",
+                    UML_Navn = "",
+                    Operator = "=",
+                    TillatteVerdier = new List<string> { element.Name },
+                    Multiplisitet = "[1..1]",
+                    Datatype = "T32"
+                };
+
                 objekttype.Egenskaper.Add(basiselement);
 
                 if (element.Name.TrimStart('.').Length > 32)
                     _repository.WriteOutput("System", "FEIL: Objektnavn er lengre enn 32 tegn - " + element.Name, 0);
             }
 
-            if (oclfraSubObjekt != null)
+            if (oclFraSubObjekt != null)
             {
-                foreach (Beskrankning beskrankning in oclfraSubObjekt)
+                foreach (Beskrankning beskrankning in oclFraSubObjekt)
                 {
                     objekttype.LeggTilBeskrankning(beskrankning);
                 }
@@ -262,37 +259,33 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     }
                     else
                     {
-                        var basiselementBuilder =
-                                new BasiselementBuilder(_repository, prikknivå, standard).ForAttributt(att);
+                        var basiselementBuilder = new BasiselementBuilder(_repository, prikknivå, standard).ForAttributt(att);
 
                         if (att.ClassifierID != 0)
                         {
-                            Element elm = _repository.GetElementByID(att.ClassifierID);
+                            var attributtElement = _repository.GetElementByID(att.ClassifierID);
 
                             if (BasiselementBuilder.ErBasistype(att.Type))
                             {
-                                Basiselement basiselement = basiselementBuilder.MedMappingAvBasistyper().Opprett();
-                                objekttype.LeggTilEgenskap(basiselement);
+                                objekttype.LeggTilEgenskap(basiselementBuilder.MedMappingAvBasistyper().Opprett());
                             }
-                            else if (elm.Stereotype.ToLower() == "codelist" || elm.Stereotype.ToLower() == "enumeration" ||
-                                     elm.Type.ToLower() == "enumeration")
+                            else if (attributtElement.IsCodeList())
                             {
-                                objekttype.LeggTilEgenskap(LagKodelisteEgenskap(prikknivå, elm, att,
+                                objekttype.LeggTilEgenskap(LagKodelisteEgenskap(prikknivå, attributtElement, att,
                                     objekttype.OCLconstraints));
                             }
-                            else if (elm.Stereotype.ToLower() == "union")
+                            else if (attributtElement.IsUnion())
                             {
-                                LagUnionEgenskaper(prikknivå, elm, att, objekttype, standard);
+                                LagUnionEgenskaper(prikknivå, attributtElement, objekttype, standard);
                             }
                             else
                             {
-                                objekttype.LeggTilEgenskap(LagGruppeelement(elm, att, prikknivå, objekttype));
+                                objekttype.LeggTilEgenskap(LagGruppeelement(attributtElement, att, prikknivå, objekttype));
                             }
                         }
                         else
                         {
-                            Basiselement basiselement = basiselementBuilder.MedMappingAvBasistyper().Opprett();
-                            objekttype.LeggTilEgenskap(basiselement);
+                            objekttype.LeggTilEgenskap(basiselementBuilder.MedMappingAvBasistyper().Opprett());
                         }
                     }
                 }
@@ -300,7 +293,6 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 {
                     _repository.WriteOutput("System", "FEIL: Finner ikke datatype for " + att.Name + " på " + element.Name + " :" + ex.Message, 0);
                 }
-
             }
 
             foreach (Connector connector in element.Connectors)
@@ -309,126 +301,86 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 {
                     Element source = _repository.GetElementByID(connector.SupplierID);
                     Element destination = _repository.GetElementByID(connector.ClientID);
-                    bool is_source = false;
 
-                    if (source.Name == element.Name) is_source = true;
-                    else is_source = false;
-                    if (connector.Stereotype.ToLower() == "topo" || connector.MetaType == "topo")
-                    {
-                        addTopo(element, objekttype, connector, source, destination);
-                    }
-                    else if (connector.SupplierEnd.Aggregation == 2 && ErConnectorNavigerbar(connector, is_source)) //Composite
-                    {
-                        Gruppeelement tmp = LagGruppeelementKomposisjon(connector, prikknivå, objekttype);
-                        objekttype.Egenskaper.Add(tmp);
-                    }
-                    else if (ErConnectorNavigerbar(connector, is_source))
-                    {
-                        List<AbstraktEgenskap> eg = LagConnectorEgenskaper(prikknivå, connector, element, standard, objekttype);
-                        objekttype.Egenskaper.AddRange(eg);
-                    }
+                    var isSource = source.Name == element.Name;
 
-
+                    if (connector.IsTopoType())
+                    {
+                        AddTopo(element, objekttype, connector, source, destination);
+                    }
+                    else if (connector.SupplierEnd.Aggregation == 2 && connector.ErNavigerbar(isSource)) //Composite
+                    {
+                        objekttype.Egenskaper.Add(LagGruppeelementKomposisjon(connector, prikknivå, objekttype));
+                    }
+                    else if (connector.ErNavigerbar(isSource))
+                    {
+                        objekttype.Egenskaper.AddRange(LagConnectorEgenskaper(prikknivå, connector, element, standard, objekttype));
+                    }
                 }
                 else if (connector.MetaType == "Generalization")
                 {
-                    Element elm = _repository.GetElementByID(connector.SupplierID);
-                    if (element.Name != elm.Name)
+                    var connectorSupplierElement = _repository.GetElementByID(connector.SupplierID);
+                    if (element.Name != connectorSupplierElement.Name)
                     {
-                        Objekttype tmp2 = LagObjekttype(elm, prikknivå, false, null);
+                        var tmp2 = LagObjekttype(connectorSupplierElement, prikknivå, false, null);
                         objekttype.Inkluder = tmp2;
-                        foreach (string geo in tmp2.Geometrityper)
+                        foreach (var geometritype in tmp2.Geometrityper.Where(g => !objekttype.Geometrityper.Contains(g)))
                         {
-                            if (!objekttype.Geometrityper.Contains(geo))
-                                objekttype.Geometrityper.Add(geo);
+                            objekttype.Geometrityper.Add(geometritype);
                         }
-                        foreach (string obj in tmp2.Avgrenser)
+                        foreach (var avgrensetObjekt in tmp2.Avgrenser.Where(o => !objekttype.Avgrenser.Contains(o)))
                         {
-                            if (!objekttype.Avgrenser.Contains(obj))
-                                objekttype.Avgrenser.Add(obj);
+                            objekttype.Avgrenser.Add(avgrensetObjekt);
                         }
-                        foreach (string obj in tmp2.AvgrensesAv)
+                        foreach (var avgrensendeObjekt in tmp2.AvgrensesAv.Where(obj => !objekttype.AvgrensesAv.Contains(obj)))
                         {
-                            if (!objekttype.AvgrensesAv.Contains(obj))
-                                objekttype.AvgrensesAv.Add(obj);
+                            objekttype.AvgrensesAv.Add(avgrensendeObjekt);
                         }
 
                         foreach (Beskrankning b in tmp2.OCLconstraints)
                         {
                             objekttype.LeggTilBeskrankning(b, tmp2.UML_Navn);
                         }
-
                     }
-
                 }
             }
-
             return objekttype;
-
         }
-        private static List<string> LagTopoAvgrensninger(Element element)
+
+        private static IEnumerable<string> LagTopoAvgrensninger(Element element)
         {
-            List<string> beskrankninger = new List<string>();
-
-            foreach (global::EA.Constraint constraint in element.Constraints)
+            foreach (Constraint constraint in element.Constraints.Cast<Constraint>()
+                         .Where(c => c.Name.StartsWith("KanAvgrensesAv")))
             {
-                var name = constraint.Name;
-
-                if (name.StartsWith("KanAvgrensesAv"))
+                var objectTypeNames = constraint.Name.Remove(0, 15);
+                var objectTypes = objectTypeNames.Split(',');
+                foreach (var objectType in objectTypes)
                 {
-
-                    var objectTypeNames = name.Remove(0, 15);
-
-                    var objectTypes = objectTypeNames.Split(',');
-                    foreach (var objectType in objectTypes)
-                    {
-                        beskrankninger.Add(objectType.Trim());
-                    }
+                    yield return objectType.Trim();
                 }
             }
-            return beskrankninger;
-
         }
-        private static List<Beskrankning> LagBeskrankninger(Element element)
+
+        private static IEnumerable<Beskrankning> LagBeskrankninger(Element element)
         {
-            List<Beskrankning> beskrankninger = new List<Beskrankning>();
-
-            foreach (global::EA.Constraint constraint in element.Constraints)
-            {
-                Beskrankning beskrankning = new Beskrankning();
-                beskrankning.Navn = constraint.Name;
-                string ocldesc = "";
-                if (constraint.Notes.Contains("/*") && constraint.Notes.Contains("*/"))
-                {
-                    var notesInLowercase = constraint.Notes.ToLower();
-                    ocldesc = constraint.Notes.Substring(notesInLowercase.IndexOf("/*") + 2,
-                        notesInLowercase.IndexOf("*/") - 2 - notesInLowercase.IndexOf("/*"));
-                }
-                beskrankning.Notat = ocldesc;
-                beskrankning.OCL = constraint.Notes;
-
-                beskrankninger.Add(beskrankning);
-            }
-            return beskrankninger;
+            return from Constraint constraint in element.Constraints select LagBeskrankning(constraint);
         }
 
-        private bool ErTomDatatype(Element element)
+        private static bool ErTomDatatype(Element element)
         {
             return element.Attributes.Count == 0;
         }
 
-        private bool ErKjentType(string type)
-        {
-            return KjenteTyper.ContainsKey(type);
-        }
-
         private Basiselement LagEgenskapForKjentType(string prikknivå, Attribute attributt, string standard)
         {
-            KjentType kjentTypeForAttributt = KjenteTyper[attributt.Type];
-            return LagBasiselementForKjentType(prikknivå, attributt, standard, kjentTypeForAttributt);
+            var builder = new BasiselementBuilder(_repository, prikknivå, standard);
+            var basiselement = builder.ForAttributt(attributt).Opprett();
+            basiselement.Datatype = KjentTypeMapper.GetKjentType(attributt.Type).Datatype;
+
+            return basiselement;
         }
 
-        private void addTopo(Element e, Objekttype ot, Connector connector, Element source, Element destination)
+        private void AddTopo(Element e, Objekttype ot, Connector connector, Element source, Element destination)
         {
             //TODO Skal ikke avgrense på abstrakte objekter kun på realiserbare
             if (connector.Direction == "Bi-Directional")
@@ -439,12 +391,14 @@ namespace Arkitektum.Kartverket.SOSI.Model
             {
                 if (source.Name != e.Name)
                 {
-                    if (source.Abstract == "0") ot.AvgrensesAv.Add(source.Name);
+                    if (source.Abstract == "0") 
+                        ot.AvgrensesAv.Add(source.Name);
                     ot.AvgrensesAv.AddRange(HentRealiserbareObjektarvListe(source));
                 }
                 else
                 {
-                    if (destination.Abstract == "0") ot.Avgrenser.Add(destination.Name);
+                    if (destination.Abstract == "0") 
+                        ot.Avgrenser.Add(destination.Name);
                     ot.Avgrenser.AddRange(HentRealiserbareObjektarvListe(destination));
                 }
             }
@@ -452,12 +406,14 @@ namespace Arkitektum.Kartverket.SOSI.Model
             {
                 if (destination.Name != e.Name)
                 {
-                    if (destination.Abstract == "0") ot.AvgrensesAv.Add(destination.Name);
+                    if (destination.Abstract == "0")
+                        ot.AvgrensesAv.Add(destination.Name);
                     ot.AvgrensesAv.AddRange(HentRealiserbareObjektarvListe(destination));
                 }
                 else
                 {
-                    if (source.Abstract == "0") ot.Avgrenser.Add(source.Name);
+                    if (source.Abstract == "0")
+                        ot.Avgrenser.Add(source.Name);
                     ot.Avgrenser.AddRange(HentRealiserbareObjektarvListe(source));
 
                 }
@@ -470,14 +426,12 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
         private IEnumerable<string> HentRealiserbareObjektarvListe(Element source)
         {
-            List<string> objektnavn = new List<string>();
+            var objektnavn = new List<string>();
 
             foreach (Connector connector in source.Connectors)
             {
-
                 if (connector.MetaType == "Generalization")
                 {
-
                     Element elm = _repository.GetElementByID(connector.ClientID);
                     if (source.Name != elm.Name)
                     {
@@ -490,67 +444,52 @@ namespace Arkitektum.Kartverket.SOSI.Model
                                 objektnavn.AddRange(arvnavn);
                         }
                     }
-
                 }
             }
-
 
             return objektnavn;
         }
 
-        private void LagUnionEgenskaper(string prikknivå, Element elm, global::EA.Attribute att2, Objekttype ot, string standard)
+        private void LagUnionEgenskaper(string prikknivå, Element element, Objekttype ot, string standard)
         {
-            List<string> attnavn = new List<string>();
+            var attributeName = new List<string>();
 
-            foreach (global::EA.Attribute att in elm.Attributes)
+            foreach (Attribute attributt in element.Attributes)
             {
-                attnavn.Add(att.Name);
+                attributeName.Add(attributt.Name);
 
-                var type = GetAttributeType(att.Type);
-
-                if (att.ClassifierID != 0)
+                if (attributt.ClassifierID != 0)
                 {
-                    Element elm1 = _repository.GetElementByID(att.ClassifierID);
+                    var attributtElement = _repository.GetElementByID(attributt.ClassifierID);
 
-                    if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration" || elm1.Type.ToLower() == "enumeration")
+                    if (attributtElement.IsCodeList())
                     {
-                        Basiselement eg = LagKodelisteEgenskap(prikknivå + ".", elm1, att, ot.OCLconstraints);
-                        ot.Egenskaper.Add(eg);
+                        ot.Egenskaper.Add(LagKodelisteEgenskap(prikknivå + ".", attributtElement, attributt, ot.OCLconstraints));
                     }
-                    else if (elm1.Stereotype.ToLower() == "union")
+                    else if (attributtElement.IsUnion())
                     {
-                        LagUnionEgenskaper(prikknivå, elm1, att, ot, standard);
-
+                        LagUnionEgenskaper(prikknivå, attributtElement, ot, standard);
                     }
-                    else if (att.Type.ToLower() == "integer" || att.Type.ToLower() == "characterstring" || att.Type.ToLower() == "real" || att.Type.ToLower() == "date" || att.Type.ToLower() == "datetime" || att.Type.ToLower() == "boolean")
+                    else if (attributt.IsBasicTypeOrBasicGeometryType())
                     {
-                        Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
-                        ot.Egenskaper.Add(eg);
-                    }
-                    else if (type == "flate" || type == "punkt" || type == "kurve")
-                    {
-
-                        Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
-                        ot.Egenskaper.Add(eg);
+                        ot.Egenskaper.Add(LagEgenskap(prikknivå + ".", attributt, standard));
                     }
                     else
                     {
-                        Gruppeelement tmp = LagGruppeelement(elm1, att, prikknivå, ot);
-                        ot.Egenskaper.Add(tmp);
+                        ot.Egenskaper.Add(LagGruppeelement(attributtElement, attributt, prikknivå, ot));
                     }
                 }
                 else
                 {
-
-                    Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
-                    ot.Egenskaper.Add(eg);
+                    ot.Egenskaper.Add(LagEgenskap(prikknivå + ".", attributt, standard));
                 }
-
             }
-            Beskrankning bs = new Beskrankning();
-            bs.Navn = "Union " + elm.Name;
-            bs.Notat = "et av elementene " + String.Join(",", attnavn.ToArray(), 0, attnavn.Count) + " er påkrevet";
-            ot.OCLconstraints.Add(bs);
+
+            ot.OCLconstraints.Add(new Beskrankning
+            {
+                Navn = "Union " + element.Name,
+                Notat = "et av elementene " + string.Join(",", attributeName.ToArray(), 0, attributeName.Count) + " er påkrevet"
+            });
         }
 
         private string GetAttributeType(string type)
@@ -570,101 +509,71 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
         private List<AbstraktEgenskap> LagConnectorEgenskaper(string prikknivå, Connector connector, Element e, string standard, Objekttype ot)
         {
-            bool is_sosi_navn = false;
-            string sosi_navn = "";
             List<AbstraktEgenskap> retur = new List<AbstraktEgenskap>();
 
-            string typeAssosiasjon = "";
-            foreach (var tag in connector.TaggedValues)
-            {
-                switch (((string)((dynamic)tag).Name).ToLower())
-                {
-                    case "sosi_assosiasjon":
-                        typeAssosiasjon = ((string)((dynamic)tag).Value).ToLower();
-                        break;
-                }
-            }
-
-
+            var typeAssosiasjon = RepositoryHelper.GetConnectorTaggedValue(connector.TaggedValues, "sosi_assosiasjon");
+            
             Element source = _repository.GetElementByID(connector.SupplierID);
             Element destination = _repository.GetElementByID(connector.ClientID);
 
-            if (typeAssosiasjon.Length == 0)
+            if (typeAssosiasjon == null)
             {
                 _repository.WriteOutput("System", "ADVARSEL: Det er ikke definert type SOSI assosiasjon mellom " + source.Name + " og " + destination.Name + " assosiasjonen. Behandles som REF.", 0);
                 typeAssosiasjon = "ref";
             }
 
-            var isSource = false || source.Name == e.Name;
+            typeAssosiasjon = typeAssosiasjon.ToLower();
+
+            var isSource = source.Name == e.Name;
 
             if (isSource)
             {
                 if (typeAssosiasjon == "primærnøkler")
                 {
-                    Gruppeelement assosiasjon = new Gruppeelement();
-                    string sosi_navn_ref = "";
-                    foreach (var tag in connector.ClientEnd.TaggedValues)
+                    var sosiNavnRef = RepositoryHelper.GetRoleTaggedValue(connector.ClientEnd.TaggedValues, RepositoryHelper.SosiNavn);
+                    
+                    var assosiasjon = new Gruppeelement
                     {
-                        switch (((string)((dynamic)tag).Tag).ToLower())
-                        {
-                            case "sosi_navn":
-                                sosi_navn_ref = (string)((dynamic)tag).Value;
-                                break;
-                        }
-                    }
-                    if (sosi_navn_ref.Length == 0)
+                        SOSI_Navn = sosiNavnRef == null ? "" : prikknivå + sosiNavnRef,
+                        Multiplisitet = "[" + connector.ClientEnd.Cardinality + "]",
+                        UML_Navn = connector.ClientEnd.Role + "(rolle)",
+                    };
+                    assosiasjon.FiksMultiplisitet();
+
+                    if (sosiNavnRef == null)
                     {
                         _repository.WriteOutput("System", "FEIL: Finner ikke tagged value SOSI_navn for " + connector.ClientEnd.Role + " på " + destination.Name, 0);
-                        assosiasjon.SOSI_Navn = "";
                     }
-                    else assosiasjon.SOSI_Navn = prikknivå + sosi_navn_ref;
 
-                    assosiasjon.Multiplisitet = "[" + connector.ClientEnd.Cardinality + "]";
-                    assosiasjon.UML_Navn = connector.ClientEnd.Role + "(rolle)";
-                    //Fikse multiplisitet
-                    assosiasjon.Multiplisitet = assosiasjon.Multiplisitet.Replace("[0]", "[0..1]");
-                    assosiasjon.Multiplisitet = assosiasjon.Multiplisitet.Replace("[0..]", "[0..*]");
-                    assosiasjon.Multiplisitet = assosiasjon.Multiplisitet.Replace("[1..]", "[1..*]");
-                    assosiasjon.Multiplisitet = assosiasjon.Multiplisitet.Replace("[1]", "[1..1]");
-                    List<String> sjekkedeObjekter = new List<string>();
-                    SosiEgenskapRetur ref_sosinavn = FinnPrimærnøkkel(destination, prikknivå + ".", standard, ot, sjekkedeObjekter);
+                    var sjekkedeObjekter = new List<string>();
+                    SosiEgenskapRetur refSosinavn = FinnPrimærnøkkel(destination, prikknivå + ".", standard, ot, sjekkedeObjekter);
 
-                    if (ref_sosinavn != null)
+                    if (refSosinavn != null)
                     {
-                        foreach (AbstraktEgenskap item in ref_sosinavn.Egenskaper)
+                        foreach (AbstraktEgenskap item in refSosinavn.Egenskaper)
                         {
-                            //Fikse multiplisitet
-                            item.Multiplisitet = item.Multiplisitet.Replace("[0]", "[0..1]");
-                            item.Multiplisitet = item.Multiplisitet.Replace("[0..]", "[0..*]");
-                            item.Multiplisitet = item.Multiplisitet.Replace("[1..]", "[1..*]");
-                            item.Multiplisitet = item.Multiplisitet.Replace("[1]", "[1..1]");
-
+                            item.FiksMultiplisitet();
                         }
-                        assosiasjon.Egenskaper = ref_sosinavn.Egenskaper;
+                        assosiasjon.Egenskaper = refSosinavn.Egenskaper;
                         retur.Add(assosiasjon);
-
                     }
                     else _repository.WriteOutput("System", "FEIL: Finner ikke primærnøkkel for " + connector.ClientEnd.Role + " på " + destination.Name, 0);
                 }
                 else if (typeAssosiasjon == "fremmednøkler")
                 {
-
-                    SosiEgenskapRetur pn_sosinavn = FinnFremmednøkkel(destination, source, connector, connector.ClientEnd);
-                    if (pn_sosinavn != null)
+                    SosiEgenskapRetur pnSosinavn = FinnFremmednøkkel(destination, source, connector, connector.ClientEnd);
+                    if (pnSosinavn != null)
                     {
-                        Basiselement eg = new Basiselement();
-                        eg.Datatype = pn_sosinavn.SOSI_Datatype + pn_sosinavn.SOSI_Lengde;
-                        eg.SOSI_Navn = prikknivå + pn_sosinavn.SOSI_Navn;
-                        eg.UML_Navn = connector.ClientEnd.Role + "(rolle)";
-                        eg.Multiplisitet = "[" + connector.ClientEnd.Cardinality + "]";
-                        eg.Standard = HentApplicationSchemaPakkeNavn(destination);
-                        //Fikse multiplisitet
-                        eg.Multiplisitet = eg.Multiplisitet.Replace("[0]", "[0..1]");
-                        eg.Multiplisitet = eg.Multiplisitet.Replace("[0..]", "[0..*]");
-                        eg.Multiplisitet = eg.Multiplisitet.Replace("[1..]", "[1..*]");
-                        eg.Multiplisitet = eg.Multiplisitet.Replace("[1]", "[1..1]");
-
-                        eg.TillatteVerdier = new List<string>();
+                        var eg = new Basiselement
+                        {
+                            Datatype = pnSosinavn.SOSI_Datatype + pnSosinavn.SOSI_Lengde,
+                            SOSI_Navn = prikknivå + pnSosinavn.SOSI_Navn,
+                            UML_Navn = connector.ClientEnd.Role + "(rolle)",
+                            Multiplisitet = "[" + connector.ClientEnd.Cardinality + "]",
+                            Standard = HentApplicationSchemaPakkeNavn(destination),
+                            TillatteVerdier = new List<string>()
+                        };
+                        eg.FiksMultiplisitet();
                         retur.Add(eg);
                     }
                 }
@@ -672,965 +581,623 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 {
                     if (!String.IsNullOrEmpty(connector.ClientEnd.Role) && (connector.ClientEnd.Navigable == "Navigable" || connector.Direction == "Unspecified")) //pluss navigerbart
                     {
-                        addClientEnd(prikknivå, connector, retur, source, destination);
+                        AddClientEnd(prikknivå, connector, retur, source, destination);
                     }
                     if (connector.SupplierID == connector.ClientID && !String.IsNullOrEmpty(connector.SupplierEnd.Role) && (connector.SupplierEnd.Navigable == "Navigable" || connector.Direction == "Unspecified")) //pluss navigerbart
                     {
-                        addSupplierEnd(prikknivå, connector, retur, source, destination);
+                        AddSupplierEnd(prikknivå, connector, retur, source, destination);
                     }
                 }
-
-
             }
             else
             {
-
                 if (typeAssosiasjon == "primærnøkler")
                 {
-                    Gruppeelement assosiasjon = new Gruppeelement();
+                    var sosiNavnRef = RepositoryHelper.GetRoleTaggedValue(connector.SupplierEnd.TaggedValues, RepositoryHelper.SosiNavn) ?? "";
 
-                    string sosi_navn_ref = "";
-                    foreach (var tag in connector.SupplierEnd.TaggedValues)
+                    var assosiasjon = new Gruppeelement
                     {
-                        switch (((string)((dynamic)tag).Tag).ToLower())
-                        {
-                            case "sosi_navn":
-                                sosi_navn_ref = (string)((dynamic)tag).Value;
-                                break;
-                        }
-                    }
-                    if (sosi_navn_ref.Length == 0)
+                        SOSI_Navn = prikknivå + sosiNavnRef,
+                        Multiplisitet = "[" + connector.SupplierEnd.Cardinality + "]",
+                        UML_Navn = connector.SupplierEnd.Role + "(rolle)",
+                    };
+
+                    if (sosiNavnRef.Length == 0)
                     {
                         _repository.WriteOutput("System", "FEIL: Finner ikke tagged value SOSI_navn for " + connector.SupplierEnd.Role + " på " + source.Name, 0);
-                        assosiasjon.SOSI_Navn = "";
                     }
-                    else assosiasjon.SOSI_Navn = prikknivå + sosi_navn_ref;
 
-                    assosiasjon.SOSI_Navn = prikknivå + sosi_navn_ref;
-                    assosiasjon.Multiplisitet = "[" + connector.SupplierEnd.Cardinality + "]";
-                    assosiasjon.UML_Navn = connector.SupplierEnd.Role + "(rolle)";
-                    //Fikse multiplisitet
-                    assosiasjon.Multiplisitet = assosiasjon.Multiplisitet.Replace("[0]", "[0..1]");
-                    assosiasjon.Multiplisitet = assosiasjon.Multiplisitet.Replace("[0..]", "[0..*]");
-                    assosiasjon.Multiplisitet = assosiasjon.Multiplisitet.Replace("[1..]", "[1..*]");
-                    assosiasjon.Multiplisitet = assosiasjon.Multiplisitet.Replace("[1]", "[1..1]");
+                    assosiasjon.FiksMultiplisitet();
 
-                    List<String> sjekkedeObjekter = new List<string>();
-                    SosiEgenskapRetur ref_sosinavn = FinnPrimærnøkkel(source, prikknivå + ".", standard, ot, sjekkedeObjekter);
-                    if (ref_sosinavn != null)
+                    var sjekkedeObjekter = new List<string>();
+                    SosiEgenskapRetur refSosinavn = FinnPrimærnøkkel(source, prikknivå + ".", standard, ot, sjekkedeObjekter);
+                    if (refSosinavn != null)
                     {
-                        foreach (AbstraktEgenskap item in ref_sosinavn.Egenskaper)
+                        foreach (AbstraktEgenskap item in refSosinavn.Egenskaper)
                         {
                             //item.Multiplisitet = "[" + connector.SupplierEnd.Cardinality + "]";
-                            //Fikse multiplisitet
-                            item.Multiplisitet = item.Multiplisitet.Replace("[0]", "[0..1]");
-                            item.Multiplisitet = item.Multiplisitet.Replace("[0..]", "[0..*]");
-                            item.Multiplisitet = item.Multiplisitet.Replace("[1..]", "[1..*]");
-                            item.Multiplisitet = item.Multiplisitet.Replace("[1]", "[1..1]");
-
-
-
+                            item.FiksMultiplisitet();
                         }
 
-                        assosiasjon.Egenskaper = ref_sosinavn.Egenskaper;
+                        assosiasjon.Egenskaper = refSosinavn.Egenskaper;
                         retur.Add(assosiasjon);
                     }
                     else _repository.WriteOutput("System", "FEIL: Finner ikke primærnøkkel for " + connector.SupplierEnd.Role + " på " + source.Name, 0);
                 }
                 else if (typeAssosiasjon == "fremmednøkler")
                 {
-                    SosiEgenskapRetur pn_sosinavn = FinnFremmednøkkel(source, destination, connector, connector.SupplierEnd);
-                    if (pn_sosinavn != null)
+                    SosiEgenskapRetur pnSosinavn = FinnFremmednøkkel(source, destination, connector, connector.SupplierEnd);
+                    if (pnSosinavn != null)
                     {
-                        Basiselement eg = new Basiselement();
-                        eg.UML_Navn = connector.SupplierEnd.Role + "(rolle)";
-                        eg.Multiplisitet = "[" + connector.SupplierEnd.Cardinality + "]";
-                        eg.Datatype = pn_sosinavn.SOSI_Datatype + pn_sosinavn.SOSI_Lengde;
-                        eg.SOSI_Navn = prikknivå + pn_sosinavn.SOSI_Navn;
-                        eg.Standard = HentApplicationSchemaPakkeNavn(source);
-                        //Fikse multiplisitet
-                        eg.Multiplisitet = eg.Multiplisitet.Replace("[0]", "[0..1]");
-                        eg.Multiplisitet = eg.Multiplisitet.Replace("[0..]", "[0..*]");
-                        eg.Multiplisitet = eg.Multiplisitet.Replace("[1..]", "[1..*]");
-                        eg.Multiplisitet = eg.Multiplisitet.Replace("[1]", "[1..1]");
-
-                        eg.TillatteVerdier = new List<string>();
+                        Basiselement eg = new Basiselement
+                        {
+                            UML_Navn = connector.SupplierEnd.Role + "(rolle)",
+                            Multiplisitet = "[" + connector.SupplierEnd.Cardinality + "]",
+                            Datatype = pnSosinavn.SOSI_Datatype + pnSosinavn.SOSI_Lengde,
+                            SOSI_Navn = prikknivå + pnSosinavn.SOSI_Navn,
+                            Standard = HentApplicationSchemaPakkeNavn(source),
+                            TillatteVerdier = new List<string>()
+                        };
+                        eg.FiksMultiplisitet();
                         retur.Add(eg);
                     }
                 }
                 else
                 {
-                    if (!String.IsNullOrEmpty(connector.SupplierEnd.Role) && (connector.SupplierEnd.Navigable == "Navigable" || connector.Direction == "Unspecified")) //pluss navigerbart
+                    if (!string.IsNullOrEmpty(connector.SupplierEnd.Role) &&
+                        (connector.SupplierEnd.Navigable == "Navigable" || connector.Direction == "Unspecified")) //pluss navigerbart
                     {
-                        addSupplierEnd(prikknivå, connector, retur, source, destination);
+                        AddSupplierEnd(prikknivå, connector, retur, source, destination);
                     }
-                    if (connector.SupplierID == connector.ClientID && !String.IsNullOrEmpty(connector.ClientEnd.Role) && (connector.ClientEnd.Navigable == "Navigable" || connector.Direction == "Unspecified")) //pluss navigerbart
+
+                    if (connector.SupplierID == connector.ClientID && !string.IsNullOrEmpty(connector.ClientEnd.Role) &&
+                        (connector.ClientEnd.Navigable == "Navigable" || connector.Direction == "Unspecified")) //pluss navigerbart
                     {
-                        addClientEnd(prikknivå, connector, retur, source, destination);
+                        AddClientEnd(prikknivå, connector, retur, source, destination);
                     }
                 }
             }
             return retur;
         }
 
-        private bool ErConnectorNavigerbar(Connector connector, bool isSupplierEnd)
+        private void AddClientEnd(string prikknivå, Connector connector, List<AbstraktEgenskap> retur, Element source, Element destination)
         {
-            bool navigerbar = false;
-            if (isSupplierEnd && connector.ClientEnd.IsNavigable)
-                navigerbar = true;
-            else if (isSupplierEnd == false && connector.SupplierEnd.IsNavigable)
-                navigerbar = true;
+            var sosiNavn = RepositoryHelper.GetRoleTaggedValue(connector.ClientEnd.TaggedValues, RepositoryHelper.SosiNavn);
 
-            return navigerbar;
-        }
-
-        private void addClientEnd(string prikknivå, Connector connector, List<AbstraktEgenskap> retur, Element source, Element destination)
-        {
-            bool is_sosi_navn = false;
-            string sosi_navn = "FIX";
-            Basiselement eg = new Basiselement();
-            eg.Datatype = "REF";
-            eg.UML_Navn = connector.ClientEnd.Role + "(rolle)";
-            eg.Multiplisitet = "[" + connector.ClientEnd.Cardinality + "]";
-            eg.Standard = HentApplicationSchemaPakkeNavn(destination);
-
-            foreach (var tag in connector.ClientEnd.TaggedValues)
+            var eg = new Basiselement
             {
-                switch (((string)((dynamic)tag).Tag).ToLower())
-                {
-                    case "sosi_navn":
-                        sosi_navn = (string)((dynamic)tag).Value;
-                        is_sosi_navn = true;
-                        break;
-                }
-            }
-            eg.SOSI_Navn = prikknivå + sosi_navn;
-            //Fikse multiplisitet
-            eg.Multiplisitet = eg.Multiplisitet.Replace("[0]", "[0..1]");
-            eg.Multiplisitet = eg.Multiplisitet.Replace("[0..]", "[0..*]");
-            eg.Multiplisitet = eg.Multiplisitet.Replace("[1..]", "[1..*]");
-            eg.Multiplisitet = eg.Multiplisitet.Replace("[1]", "[1..1]");
-
-            eg.TillatteVerdier = new List<string>();
-            retur.Add(eg);
-            if (is_sosi_navn == false) _repository.WriteOutput("System", "FEIL: Mangler angivelse av tagged value sosi_navn på assosiasjonsende " + connector.ClientEnd.Role + " mellom " + source.Name + " og " + destination.Name, 0);
-        }
-
-        private void addSupplierEnd(string prikknivå, Connector connector, List<AbstraktEgenskap> retur, Element source, Element destination)
-        {
-            bool is_sosi_navn = false;
-            string sosi_navn = "FIX";
-            Basiselement eg = new Basiselement();
-            eg.UML_Navn = connector.SupplierEnd.Role + "(rolle)";
-            eg.Multiplisitet = "[" + connector.SupplierEnd.Cardinality + "]";
-            eg.Datatype = "REF";
-            foreach (var tag in connector.SupplierEnd.TaggedValues)
-            {
-
-                switch (((string)((dynamic)tag).Tag).ToLower())
-                {
-
-                    case "sosi_navn":
-                        sosi_navn = (string)((dynamic)tag).Value;
-                        is_sosi_navn = true;
-                        break;
-                }
-            }
-            eg.SOSI_Navn = prikknivå + sosi_navn;
-            eg.Standard = HentApplicationSchemaPakkeNavn(source);
-            //Fikse multiplisitet
-            eg.Multiplisitet = eg.Multiplisitet.Replace("[0]", "[0..1]");
-            eg.Multiplisitet = eg.Multiplisitet.Replace("[0..]", "[0..*]");
-            eg.Multiplisitet = eg.Multiplisitet.Replace("[1..]", "[1..*]");
-            eg.Multiplisitet = eg.Multiplisitet.Replace("[1]", "[1..1]");
-
-            eg.TillatteVerdier = new List<string>();
+                Datatype = "REF",
+                UML_Navn = connector.ClientEnd.Role + "(rolle)",
+                Multiplisitet = "[" + connector.ClientEnd.Cardinality + "]",
+                Standard = HentApplicationSchemaPakkeNavn(destination),
+                SOSI_Navn = prikknivå + (sosiNavn ?? "FIX"),
+                TillatteVerdier = new List<string>()
+            };
+            eg.FiksMultiplisitet();
 
             retur.Add(eg);
-            if (is_sosi_navn == false) _repository.WriteOutput("System", "FEIL: Mangler angivelse av tagged value sosi_navn på assosiasjonsende " + connector.SupplierEnd.Role + " mellom " + source.Name + " og " + destination.Name, 0);
+            if (sosiNavn == null)
+                _repository.WriteOutput("System", "FEIL: Mangler angivelse av tagged value sosi_navn på assosiasjonsende " + connector.ClientEnd.Role + " mellom " + source.Name + " og " + destination.Name, 0);
         }
 
+        private void AddSupplierEnd(string prikknivå, Connector connector, List<AbstraktEgenskap> retur, Element source, Element destination)
+        {
+            var sosiNavn = RepositoryHelper.GetRoleTaggedValue(connector.SupplierEnd.TaggedValues, RepositoryHelper.SosiNavn);
 
+            var eg = new Basiselement
+            {
+                UML_Navn = connector.SupplierEnd.Role + "(rolle)",
+                Multiplisitet = "[" + connector.SupplierEnd.Cardinality + "]",
+                Datatype = "REF",
+                SOSI_Navn = prikknivå + (sosiNavn ?? "FIX"),
+                Standard = HentApplicationSchemaPakkeNavn(source),
+                TillatteVerdier = new List<string>()
+            };
+            eg.FiksMultiplisitet();
+
+            retur.Add(eg);
+
+            if (sosiNavn == null)
+                _repository.WriteOutput("System", "FEIL: Mangler angivelse av tagged value sosi_navn på assosiasjonsende " + connector.SupplierEnd.Role + " mellom " + source.Name + " og " + destination.Name, 0);
+        }
 
         private SosiEgenskapRetur FinnFremmednøkkel(Element destination, Element source, Connector connector, ConnectorEnd end)
         {
             SosiEgenskapRetur retur = null;
-            string attributtnavn = "";
-            foreach (object tag in end.TaggedValues)
+            var attributtnavn = RepositoryHelper.GetRoleTaggedValue(end.TaggedValues, "sosi_fremmednøkkel");
+
+            if (attributtnavn?.Length > 0)
             {
-
-                switch (((string)((dynamic)tag).Tag).ToLower())
+                var sosiNavn = "";
+                var sosiLengde = "";
+                var sosiDatatype = "";
+                foreach (Attribute att in source.Attributes)
                 {
-                    case "sosi_fremmednøkkel":
-                        attributtnavn = (string)((dynamic)tag).Value;
-                        break;
-                }
-            }
-
-            if (attributtnavn.Length > 0)
-            {
-                string sosi_navn = "";
-                string sosi_lengde = "";
-                string sosi_datatype = "";
-                foreach (global::EA.Attribute att in source.Attributes)
-                {
-
-                    if (attributtnavn.ToLower() == att.Name.ToLower())
+                    if (attributtnavn.Equals(att.Name.ToLower(), StringComparison.InvariantCultureIgnoreCase))
                     {
-                        foreach (object tag in att.TaggedValues)
+                        foreach (TaggedValue tag in att.TaggedValues)
                         {
-
-                            switch (((string)((dynamic)tag).Name).ToLower())
+                            switch (tag.Name.ToLower())
                             {
                                 case "sosi_navn":
-                                    sosi_navn = (string)((dynamic)tag).Value;
+                                    sosiNavn = tag.Value;
                                     break;
                                 case "sosi_lengde":
-                                    sosi_lengde = (string)((dynamic)tag).Value;
+                                    sosiLengde = tag.Value;
                                     break;
                                 case "sosi_datatype":
-                                    sosi_datatype = (string)((dynamic)tag).Value;
+                                    sosiDatatype = tag.Value;
                                     break;
                             }
                         }
-                        retur = new SosiEgenskapRetur();
-                        retur.SOSI_Navn = sosi_navn;
-                        retur.SOSI_Lengde = sosi_lengde;
-                        retur.SOSI_Datatype = sosi_datatype;
+                        retur = new SosiEgenskapRetur
+                        {
+                            SOSI_Navn = sosiNavn,
+                            SOSI_Lengde = sosiLengde,
+                            SOSI_Datatype = sosiDatatype
+                        };
                         break;
-
                     }
                 }
             }
             else
             {
-
-                foreach (global::EA.Attribute att in source.Attributes)
+                foreach (Attribute att in source.Attributes)
                 {
-                    string sosi_navn = "";
-                    string sosi_lengde = "";
-                    string sosi_datatype = "";
-                    string sosi_fremmednøkkel = "";
+                    var sosiFremmednøkkel = RepositoryHelper.GetTaggedValue(att.TaggedValues, "sosi_fremmednøkkel");
 
-                    foreach (object tag in att.TaggedValues)
-                    {
-
-                        switch (((string)((dynamic)tag).Name).ToLower())
-                        {
-                            case "sosi_fremmednøkkel":
-                                sosi_fremmednøkkel = (string)((dynamic)tag).Value;
-                                break;
-                            case "sosi_navn":
-                                sosi_navn = (string)((dynamic)tag).Value;
-                                break;
-                            case "sosi_lengde":
-                                sosi_lengde = (string)((dynamic)tag).Value;
-                                break;
-                            case "sosi_datatype":
-                                sosi_datatype = (string)((dynamic)tag).Value;
-                                break;
-                        }
-                    }
-                    if (sosi_fremmednøkkel.ToLower() == destination.Name.ToLower())
+                    if (sosiFremmednøkkel?.Equals(destination.Name, StringComparison.InvariantCultureIgnoreCase) ?? false)
                     {
                         //Finnes alt så den skal ikke lages..
                         break;
                     }
-                    else
-                    {
-                        _repository.WriteOutput("System", "FEIL: Ufullstendig assosiasjon: " + end.Role, 0);
-                    }
+
+                    _repository.WriteOutput("System", "FEIL: Ufullstendig assosiasjon: " + end.Role, 0);
                 }
             }
 
             return retur;
         }
 
-        private SosiEgenskapRetur FinnPrimærnøkkel(Element source, string prikknivå, string standard, Objekttype ot, List<String> arvedeobjekterSjekket)
+        private SosiEgenskapRetur FinnPrimærnøkkel(Element source, string prikknivå, string standard, Objekttype ot, List<string> arvedeobjekterSjekket)
         {
-
-            SosiEgenskapRetur retur = null;
-            retur = new SosiEgenskapRetur();
-            retur.Egenskaper = new List<AbstraktEgenskap>();
-
-            foreach (global::EA.Attribute att in source.Attributes)
+            var retur = new SosiEgenskapRetur
             {
-                bool erPrimærnøkkel = false;
+                Egenskaper = new List<AbstraktEgenskap>()
+            };
 
-                foreach (object tag in att.TaggedValues)
+            foreach (Attribute att in source.Attributes)
+            {
+                var erPrimærnøkkel = false;
+
+                var primærnøkkel = RepositoryHelper.GetTaggedValue(att.TaggedValues, "sosi_primærnøkkel");
+                if (primærnøkkel?.Equals("true", StringComparison.InvariantCultureIgnoreCase) ?? false)
                 {
-
-                    switch (((string)((dynamic)tag).Name).ToLower())
-                    {
-                        case "sosi_primærnøkkel":
-                            if (((string)((dynamic)tag).Value).ToLower() == "true") erPrimærnøkkel = true;
-                            break;
-                    }
+                    erPrimærnøkkel = true;
                 }
+
                 if (erPrimærnøkkel)
                 {
 
-                    if (att.Type.ToLower() == "integer" || att.Type.ToLower() == "characterstring" || att.Type.ToLower() == "real" || att.Type.ToLower() == "date" || att.Type.ToLower() == "datetime" || att.Type.ToLower() == "boolean")
+                    if (att.IsBasicType())
                     {
-                        Basiselement eg = LagEgenskap(prikknivå, att, standard);
-                        retur.Egenskaper.Add(eg);
+                        retur.Egenskaper.Add(LagEgenskap(prikknivå, att, standard));
                     }
                     else //Kompleks type(datatype) som primærnøkkel
                     {
-
                         if (att.ClassifierID != 0)
                         {
-                            Element elm1 = _repository.GetElementByID(att.ClassifierID);
-                            if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration" || elm1.Type.ToLower() == "enumeration")
+                            Element attributeElement = _repository.GetElementByID(att.ClassifierID);
+                            if (attributeElement.IsCodeList())
                             {
-                                Basiselement tmp = LagKodelisteEgenskap(prikknivå, elm1, att, ot.OCLconstraints);
-                                retur.Egenskaper.Add(tmp);
+                                retur.Egenskaper.Add(LagKodelisteEgenskap(prikknivå, attributeElement, att, ot.OCLconstraints));
                             }
                             else
                             {
-                                Gruppeelement tmp = LagGruppeelement(elm1, att, prikknivå, ot);
-                                retur.Egenskaper.Add(tmp);
+                                retur.Egenskaper.Add(LagGruppeelement(attributeElement, att, prikknivå, ot));
                             }
                         }
-                        else _repository.WriteOutput("System", "FEIL: Primærnøkkel er feil definert på : " + source.Name, 0);
-
+                        else
+                        {
+                            _repository.WriteOutput("System", "FEIL: Primærnøkkel er feil definert på : " + source.Name, 0);
+                        }
                     }
-
-
                 }
 
                 foreach (Connector connector in source.Connectors)
                 {
                     if (connector.MetaType == "Generalization")
                     {
-                        Element elmg = _repository.GetElementByID(connector.SupplierID);
-                        if (source.Name != elmg.Name)
+                        Element connectorSourceElement = _repository.GetElementByID(connector.SupplierID);
+                        if (source.Name != connectorSourceElement.Name)
                         {
-                            if (arvedeobjekterSjekket.Contains(elmg.Name) == false)
+                            if (arvedeobjekterSjekket.Contains(connectorSourceElement.Name) == false)
                             {
-                                var ret = FinnPrimærnøkkel(elmg, prikknivå, standard, ot, arvedeobjekterSjekket);
-                                arvedeobjekterSjekket.Add(elmg.Name);
+                                var ret = FinnPrimærnøkkel(connectorSourceElement, prikknivå, standard, ot, arvedeobjekterSjekket);
+                                arvedeobjekterSjekket.Add(connectorSourceElement.Name);
                                 retur.Egenskaper.AddRange(ret.Egenskaper);
                             }
-
                         }
-
                     }
                 }
-
-
             }
             return retur;
         }
 
-
-
-        private Gruppeelement LagGruppeelement(Element elm, global::EA.Attribute att2, string prikknivå, Objekttype parentObjekttype)
+        private Gruppeelement LagGruppeelement(Element umlElement, Attribute att2, string prikknivå, Objekttype parentObjekttype)
         {
-            Gruppeelement ot = new Gruppeelement();
-            ot.Egenskaper = new List<AbstraktEgenskap>();
-            ot.OCLconstraints = new List<Beskrankning>();
-            bool sosi_navn = false;
-
-            ot.Notat = elm.Notes;
-            ot.SOSI_Navn = prikknivå;
-            string standard = HentApplicationSchemaPakkeNavn(elm);
-            ot.Standard = standard;
+            var standard = HentApplicationSchemaPakkeNavn(umlElement);
+            var gruppeelement = new Gruppeelement
+            {
+                Egenskaper = new List<AbstraktEgenskap>(),
+                OCLconstraints = new List<Beskrankning>(),
+                Notat = umlElement.Notes,
+                SOSI_Navn = prikknivå,
+                Standard = standard
+            };
+            var harSosiNavn = false;
             if (att2 == null)
             {
-                ot.Multiplisitet = "[1..1]";
-                ot.UML_Navn = elm.Name;
+                gruppeelement.Multiplisitet = "[1..1]";
+                gruppeelement.UML_Navn = umlElement.Name;
             }
             else
             {
-                ot.UML_Navn = att2.Name;
-                ot.Multiplisitet = "[" + att2.LowerBound + ".." + att2.UpperBound + "]";
+                gruppeelement.UML_Navn = att2.Name;
+                gruppeelement.Multiplisitet = "[" + att2.LowerBound + ".." + att2.UpperBound + "]";
 
-                foreach (object tag in att2.TaggedValues)
+                var sosiNavn = RepositoryHelper.GetTaggedValue(att2.TaggedValues, RepositoryHelper.SosiNavn);
+                if (!string.IsNullOrEmpty(sosiNavn))
                 {
-                    switch (((string)((dynamic)tag).Name).ToLower())
-                    {
-                        case "sosi_navn":
-                            ot.SOSI_Navn = prikknivå + ((dynamic)tag).Value;
-                            if (ot.SOSI_Navn.Length > 0) sosi_navn = true;
-                            break;
-                    }
+                    gruppeelement.SOSI_Navn = prikknivå + sosiNavn;
+                    harSosiNavn = gruppeelement.SOSI_Navn.Length > 0;
                 }
             }
-            if (sosi_navn == false)
+            if (!harSosiNavn)
             {
-                foreach (TaggedValue theTags in elm.TaggedValues)
+                var sosiNavn = RepositoryHelper.GetTaggedValue(umlElement.TaggedValues, RepositoryHelper.SosiNavn);
+                if (!string.IsNullOrEmpty(sosiNavn))
                 {
-                    switch (theTags.Name.ToLower())
-                    {
-                        case "sosi_navn":
-                            ot.SOSI_Navn = prikknivå + theTags.Value;
-                            if (ot.SOSI_Navn.Length > 0) sosi_navn = true;
-                            break;
-                    }
+                    gruppeelement.SOSI_Navn = prikknivå + sosiNavn;
+                    harSosiNavn = gruppeelement.SOSI_Navn.Length > 0;
                 }
             }
-            if (sosi_navn == false) _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_navn på gruppeelement: " + elm.Name, 0);
 
-            foreach (global::EA.Constraint constraint in elm.Constraints)
+            if (harSosiNavn == false) _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_navn på gruppeelement: " + umlElement.Name, 0);
+
+            foreach (Constraint constraint in umlElement.Constraints)
             {
-                Beskrankning beskrankning = new Beskrankning();
-                beskrankning.Navn = constraint.Name;
-                string ocldesc = "";
-                if (constraint.Notes.Contains("/*") && constraint.Notes.Contains("*/"))
-                {
-                    ocldesc = constraint.Notes.Substring(constraint.Notes.ToLower().IndexOf("/*") + 2, constraint.Notes.ToLower().IndexOf("*/") - 2 - constraint.Notes.ToLower().IndexOf("/*"));
-                }
-                beskrankning.Notat = ocldesc;
-                beskrankning.OCL = constraint.Notes;
-
-                parentObjekttype.LeggTilBeskrankning(beskrankning);
+                parentObjekttype.LeggTilBeskrankning(LagBeskrankning(constraint));
             }
 
-            foreach (global::EA.Attribute att in elm.Attributes)
+            foreach (Attribute att in umlElement.Attributes)
             {
-                string nestePrikknivå = prikknivå + ".";
+                var nestePrikknivå = prikknivå + ".";
 
-                var basiselementBuilder =
-                                new BasiselementBuilder(_repository, nestePrikknivå, standard).ForAttributt(att);
+                var basiselementBuilder = new BasiselementBuilder(_repository, nestePrikknivå, standard).ForAttributt(att);
 
                 if (att.ClassifierID != 0)
                 {
-                    Element elm1 = _repository.GetElementByID(att.ClassifierID);
+                    var attributtElement = _repository.GetElementByID(att.ClassifierID);
 
-                    if (ErKjentType(att.Type))
+                    if (KjentTypeMapper.ErKjentType(att.Type))
                     {
-                        ot.Egenskaper.Add(LagEgenskapForKjentType(nestePrikknivå, att, standard));
+                        gruppeelement.Egenskaper.Add(LagEgenskapForKjentType(nestePrikknivå, att, standard));
                     }
-                    else if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration" || elm1.Type.ToLower() == "enumeration")
+                    else if (attributtElement.IsCodeList())
                     {
-                        Basiselement eg = LagKodelisteEgenskap(nestePrikknivå, elm1, att, parentObjekttype.OCLconstraints);
-                        ot.Egenskaper.Add(eg);
+                        gruppeelement.Egenskaper.Add(LagKodelisteEgenskap(nestePrikknivå, attributtElement, att, parentObjekttype.OCLconstraints));
                     }
-                    else if (elm1.Stereotype.ToLower() == "union")
+                    else if (attributtElement.IsUnion())
                     {
-                        LagUnionEgenskaperForGruppeelement(nestePrikknivå, elm1, att, parentObjekttype, standard, ot);
+                        LagUnionEgenskaperForGruppeelement(nestePrikknivå, attributtElement, parentObjekttype, standard, gruppeelement);
                     }
                     else if (BasiselementBuilder.ErBasistype(att.Type))
                     {
-                        Basiselement basiselement = basiselementBuilder.MedMappingAvBasistyper().Opprett();
-                        ot.LeggTilEgenskap(basiselement);
+                        gruppeelement.LeggTilEgenskap(basiselementBuilder.MedMappingAvBasistyper().Opprett());
                     }
-                    else if (ErTomDatatype(elm1))
+                    else if (ErTomDatatype(attributtElement))
                     {
-                        Basiselement basiselement = basiselementBuilder.MedMappingAvTomDatatype().Opprett();
-                        ot.LeggTilEgenskap(basiselement);
+                        gruppeelement.LeggTilEgenskap(basiselementBuilder.MedMappingAvTomDatatype().Opprett());
                     }
                     else
                     {
-                        Gruppeelement tmp = LagGruppeelement(elm1, att, nestePrikknivå, parentObjekttype);
-                        ot.Egenskaper.Add(tmp);
+                        gruppeelement.Egenskaper.Add(LagGruppeelement(attributtElement, att, nestePrikknivå, parentObjekttype));
                     }
                 }
                 else
                 {
-                    Basiselement basiselement = basiselementBuilder.MedMappingAvBasistyper().Opprett();
-                    ot.LeggTilEgenskap(basiselement);
+                    gruppeelement.LeggTilEgenskap(basiselementBuilder.MedMappingAvBasistyper().Opprett());
                 }
             }
-            foreach (Connector connector in elm.Connectors)
+
+            foreach (Connector connector in umlElement.Connectors)
             {
                 if (connector.MetaType == "Association" || connector.MetaType == "Aggregation")
                 {
                     Element source = _repository.GetElementByID(connector.SupplierID);
                     Element destination = _repository.GetElementByID(connector.ClientID);
-                    bool is_source = false;
 
-                    if (source.Name == elm.Name) is_source = true;
-                    else is_source = false;
+                    var isSource = source.Name == umlElement.Name;
 
-                    if (connector.SupplierEnd.Aggregation == 2 && ErConnectorNavigerbar(connector, is_source)) //Composite
+                    if (connector.SupplierEnd.Aggregation == 2 && connector.ErNavigerbar(isSource)) //Composite
                     {
-                        Gruppeelement tmp = LagGruppeelementKomposisjon(connector, prikknivå, parentObjekttype);
-                        ot.Egenskaper.Add(tmp);
+                        gruppeelement.Egenskaper.Add(LagGruppeelementKomposisjon(connector, prikknivå, parentObjekttype));
                     }
-                    else if (ErConnectorNavigerbar(connector, is_source))
+                    else if (connector.ErNavigerbar(isSource))
                     {
-                        List<AbstraktEgenskap> eg = LagConnectorEgenskaper(prikknivå, connector, elm, standard, parentObjekttype);
-                        ot.Egenskaper.AddRange(eg);
+                        gruppeelement.Egenskaper.AddRange(LagConnectorEgenskaper(prikknivå, connector, umlElement, standard, parentObjekttype));
                     }
-
                 }
                 else if (connector.MetaType == "Generalization")
                 {
-
                     Element elmg = _repository.GetElementByID(connector.SupplierID);
 
-                    if (elm.Name != elmg.Name)
+                    if (umlElement.Name != elmg.Name)
                     {
                         Gruppeelement tmp2 = LagGruppeelement(elmg, null, prikknivå, parentObjekttype);
-                        ot.Inkluder = tmp2;
+                        gruppeelement.Inkluder = tmp2;
                     }
-
                 }
             }
-            return ot;
+            return gruppeelement;
         }
 
-
-        private Gruppeelement LagGruppeelementKomposisjon(global::EA.Connector conn, string prikknivå, Objekttype pot)
+        private Gruppeelement LagGruppeelementKomposisjon(Connector conn, string prikknivå, Objekttype pot)
         {
-            Element elm = _repository.GetElementByID(conn.ClientID);
+            Element connectorClientElement = _repository.GetElementByID(conn.ClientID);
+            var standard = HentApplicationSchemaPakkeNavn(connectorClientElement);
 
-            Gruppeelement ot = new Gruppeelement();
-            ot.Egenskaper = new List<AbstraktEgenskap>();
-            ot.OCLconstraints = new List<Beskrankning>();
-            bool sosi_navn = false;
-            ot.UML_Navn = conn.ClientEnd.Role + "(rolle)";
-            ot.Notat = elm.Notes;
-            ot.SOSI_Navn = prikknivå;
-            string standard = HentApplicationSchemaPakkeNavn(elm);
-            ot.Standard = standard;
-            ot.Multiplisitet = "[" + conn.ClientEnd.Cardinality + "]";
-
-            foreach (object tag in conn.ClientEnd.TaggedValues)
+            var ot = new Gruppeelement
             {
-                switch (((string)((dynamic)tag).Tag).ToLower())
-                {
-                    case "sosi_navn":
-                        ot.SOSI_Navn = prikknivå + ((dynamic)tag).Value;
-                        if (ot.SOSI_Navn.Length > 0) sosi_navn = true;
-                        break;
-                }
+                Egenskaper = new List<AbstraktEgenskap>(),
+                OCLconstraints = new List<Beskrankning>(),
+                UML_Navn = conn.ClientEnd.Role + "(rolle)",
+                Notat = connectorClientElement.Notes,
+                SOSI_Navn = prikknivå,
+                Standard = standard,
+                Multiplisitet = "[" + conn.ClientEnd.Cardinality + "]"
+            };
+
+            var sosiNavn = RepositoryHelper.GetRoleTaggedValue(conn.ClientEnd.TaggedValues, RepositoryHelper.SosiNavn);
+            var harSosiNavn = sosiNavn != null;
+            ot.SOSI_Navn = prikknivå + sosiNavn;
+
+            if (harSosiNavn == false) 
+                _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_navn på komposisjon: " + conn.ClientEnd.Role, 0);
+
+            foreach (Constraint constraint in connectorClientElement.Constraints)
+            {
+                pot.OCLconstraints.Add(LagBeskrankning(constraint));
             }
 
-            if (sosi_navn == false) _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_navn på komposisjon: " + conn.ClientEnd.Role, 0);
-
-            foreach (global::EA.Constraint constr in elm.Constraints)
+            foreach (Attribute att in connectorClientElement.Attributes)
             {
-                Beskrankning bskr = new Beskrankning();
-                bskr.Navn = constr.Name;
-                string ocldesc = "";
-                if (constr.Notes.Contains("/*") && constr.Notes.Contains("*/"))
-                {
-                    ocldesc = constr.Notes.Substring(constr.Notes.ToLower().IndexOf("/*") + 2, constr.Notes.ToLower().IndexOf("*/") - 2 - constr.Notes.ToLower().IndexOf("/*"));
-                }
-                bskr.Notat = ocldesc;
-                bskr.OCL = constr.Notes;
-
-                pot.OCLconstraints.Add(bskr);
-            }
-
-            foreach (global::EA.Attribute att in elm.Attributes)
-            {
-
                 if (att.ClassifierID != 0)
                 {
+                    var attributeElement = _repository.GetElementByID(att.ClassifierID);
 
-                    Element elm1 = _repository.GetElementByID(att.ClassifierID);
-
-                    var type = GetAttributeType(att.Type);
-
-                    if (ErKjentType(att.Type))
+                    if (KjentTypeMapper.ErKjentType(att.Type))
                     {
                         ot.Egenskaper.Add(LagEgenskapForKjentType(prikknivå, att, standard));
                     }
-                    else if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration" || elm1.Type.ToLower() == "enumeration")
+                    else if (attributeElement.IsCodeList())
                     {
-                        Basiselement eg = LagKodelisteEgenskap(prikknivå + ".", elm1, att, pot.OCLconstraints);
-                        ot.Egenskaper.Add(eg);
+                        ot.Egenskaper.Add(LagKodelisteEgenskap(prikknivå + ".", attributeElement, att, pot.OCLconstraints));
                     }
-                    else if (elm1.Stereotype.ToLower() == "union")
+                    else if (attributeElement.IsUnion())
                     {
-                        LagUnionEgenskaperForGruppeelement(prikknivå, elm1, att, pot, standard, ot);
+                        LagUnionEgenskaperForGruppeelement(prikknivå, attributeElement, pot, standard, ot);
                     }
-                    else if (att.Type.ToLower() == "integer" || att.Type.ToLower() == "characterstring" || att.Type.ToLower() == "real" || att.Type.ToLower() == "date" || att.Type.ToLower() == "datetime" || att.Type.ToLower() == "boolean")
+                    else if (att.IsBasicTypeOrBasicGeometryType())
                     {
-                        Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
-                        ot.Egenskaper.Add(eg);
-                    }
-                    else if (type == "flate" || type == "punkt" || type == "kurve")
-                    {
-                        Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
-                        ot.Egenskaper.Add(eg);
+                        ot.Egenskaper.Add(LagEgenskap(prikknivå + ".", att, standard));
                     }
                     else
                     {
-                        Gruppeelement tmp = LagGruppeelement(elm1, att, prikknivå + ".", pot);
-                        ot.Egenskaper.Add(tmp);
+                        ot.Egenskaper.Add(LagGruppeelement(attributeElement, att, prikknivå + ".", pot));
                     }
                 }
                 else
                 {
-                    Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
-                    ot.Egenskaper.Add(eg);
+                    ot.Egenskaper.Add(LagEgenskap(prikknivå + ".", att, standard));
                 }
-
             }
 
-            foreach (Connector connector in elm.Connectors)
+            foreach (Connector connector in connectorClientElement.Connectors)
             {
                 if (connector.MetaType == "Association" || connector.MetaType == "Aggregation")
                 {
                     Element source = _repository.GetElementByID(connector.SupplierID);
                     Element destination = _repository.GetElementByID(connector.ClientID);
-                    bool is_source = false;
 
-                    if (source.Name == elm.Name) is_source = true;
-                    else is_source = false;
+                    var isSource = source.Name == connectorClientElement.Name;
 
-                    if (connector.SupplierEnd.Aggregation == 2 && ErConnectorNavigerbar(connector, is_source)) //Composite
+                    if (connector.SupplierEnd.Aggregation == 2 && connector.ErNavigerbar(isSource)) //Composite
                     {
-                        Gruppeelement tmp = LagGruppeelementKomposisjon(connector, prikknivå, pot);
-                        ot.Egenskaper.Add(tmp);
+                        ot.Egenskaper.Add(LagGruppeelementKomposisjon(connector, prikknivå, pot));
                     }
-                    else if (ErConnectorNavigerbar(connector, is_source))
+                    else if (connector.ErNavigerbar(isSource))
                     {
-                        List<AbstraktEgenskap> eg = LagConnectorEgenskaper(prikknivå, connector, elm, standard, pot);
-                        ot.Egenskaper.AddRange(eg);
+                        ot.Egenskaper.AddRange(LagConnectorEgenskaper(prikknivå, connector, connectorClientElement, standard, pot));
                     }
 
                 }
                 if (connector.MetaType == "Generalization")
                 {
-
-                    Element elmg = _repository.GetElementByID(connector.SupplierID);
-                    if (elm.Name != elmg.Name)
+                    Element connectorSupplierElement = _repository.GetElementByID(connector.SupplierID);
+                    if (connectorClientElement.Name != connectorSupplierElement.Name)
                     {
-                        Gruppeelement tmp2 = LagGruppeelement(elmg, null, prikknivå, pot);
-                        ot.Inkluder = tmp2;
+                        ot.Inkluder = LagGruppeelement(connectorSupplierElement, null, prikknivå, pot);
                     }
-
                 }
             }
             return ot;
         }
 
-        private void LagUnionEgenskaperForGruppeelement(string prikknivå, Element elm, global::EA.Attribute att1, Objekttype pot, string standard, Gruppeelement ot)
+        private void LagUnionEgenskaperForGruppeelement(string prikknivå, Element element, Objekttype pot, string standard, Gruppeelement ot)
         {
-            List<string> attnavn = new List<string>();
+            var attributeName = new List<string>();
 
-
-            foreach (global::EA.Constraint constr in elm.Constraints)
+            foreach (Constraint constraint in element.Constraints)
             {
-                Beskrankning bskr = new Beskrankning();
-                bskr.Navn = constr.Name;
-                string ocldesc = "";
-                if (constr.Notes.Contains("/*") && constr.Notes.Contains("*/"))
-                {
-                    ocldesc = constr.Notes.Substring(constr.Notes.ToLower().IndexOf("/*") + 2, constr.Notes.ToLower().IndexOf("*/") - 2 - constr.Notes.ToLower().IndexOf("/*"));
-                }
-                bskr.Notat = ocldesc;
-                bskr.OCL = constr.Notes;
-
-                pot.OCLconstraints.Add(bskr);
+                pot.OCLconstraints.Add(LagBeskrankning(constraint));
             }
 
-            foreach (global::EA.Attribute att in elm.Attributes)
+            foreach (Attribute attributt in element.Attributes)
             {
-                attnavn.Add(att.Name);
+                attributeName.Add(attributt.Name);
 
-                var type = GetAttributeType(att.Type);
-
-                if (att.ClassifierID != 0)
+                if (attributt.ClassifierID != 0)
                 {
-                    Element elm1 = _repository.GetElementByID(att.ClassifierID);
-                    if (elm1.Stereotype.ToLower() == "codelist" || elm1.Stereotype.ToLower() == "enumeration" || elm1.Type.ToLower() == "enumeration")
+                    var attributeElement = _repository.GetElementByID(attributt.ClassifierID);
+                    
+                    if (attributeElement.IsCodeList())
                     {
-                        Basiselement eg = LagKodelisteEgenskap(prikknivå + ".", elm1, att, pot.OCLconstraints);
-                        ot.Egenskaper.Add(eg);
+                        ot.Egenskaper.Add(LagKodelisteEgenskap(prikknivå + ".", attributeElement, attributt, pot.OCLconstraints));
                     }
-                    else if (elm1.Stereotype.ToLower() == "union")
+                    else if (attributeElement.IsUnion())
                     {
-                        LagUnionEgenskaperForGruppeelement(prikknivå, elm, att, pot, standard, ot);
-
+                        LagUnionEgenskaperForGruppeelement(prikknivå, element, pot, standard, ot);
                     }
-                    else if (att.Type.ToLower() == "integer" || att.Type.ToLower() == "characterstring" || att.Type.ToLower() == "real" || att.Type.ToLower() == "date" || att.Type.ToLower() == "datetime" || att.Type.ToLower() == "boolean")
+                    else if (attributt.IsBasicTypeOrBasicGeometryType())
                     {
-                        Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
-                        ot.Egenskaper.Add(eg);
-                    }
-
-                    else if (type == "flate" || type == "punkt" || type == "kurve")
-                    {
-
-                        Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
-                        ot.Egenskaper.Add(eg);
+                        ot.Egenskaper.Add(LagEgenskap(prikknivå + ".", attributt, standard));
                     }
                     else
                     {
-                        Gruppeelement tmp = LagGruppeelement(elm1, att, prikknivå + ".", pot);
-                        ot.Egenskaper.Add(tmp);
+                        ot.Egenskaper.Add(LagGruppeelement(attributeElement, attributt, prikknivå + ".", pot));
                     }
                 }
                 else
                 {
-
-                    Basiselement eg = LagEgenskap(prikknivå + ".", att, standard);
-                    ot.Egenskaper.Add(eg);
+                    ot.Egenskaper.Add(LagEgenskap(prikknivå + ".", attributt, standard));
                 }
-
             }
 
-            Beskrankning bs = new Beskrankning();
-            bs.Navn = "Union " + elm.Name;
-            bs.Notat = "et av elementene " + String.Join(",", attnavn.ToArray(), 0, attnavn.Count) + " er påkrevet";
-            pot.OCLconstraints.Add(bs);
+            pot.OCLconstraints.Add(new Beskrankning
+            {
+                Navn = "Union " + element.Name,
+                Notat = "Ett av elementene " + string.Join(",", attributeName.ToArray(), 0, attributeName.Count) + " er påkrevet"
+            });
+        }
 
+        private static Beskrankning LagBeskrankning(Constraint constraint)
+        {
+            var oclDescription = "";
+            if (constraint.Notes.Contains("/*") && constraint.Notes.Contains("*/"))
+            {
+                oclDescription = constraint.Notes.Substring(constraint.Notes.ToLower().IndexOf("/*") + 2,
+                    constraint.Notes.ToLower().IndexOf("*/") - 2 - constraint.Notes.ToLower().IndexOf("/*"));
+            }
 
-
+            return new Beskrankning
+            {
+                Navn = constraint.Name,
+                Notat = oclDescription,
+                OCL = constraint.Notes
+            };
         }
 
         private string HentApplicationSchemaPakkeNavn(Element elm)
         {
-            string pnavn = "FIX";
-
-            if (elm.PackageID != 0)
+            while (true)
             {
-                Package pk = _repository.GetPackageByID(elm.PackageID);
-                if (pk.Element != null)
+                var pakkenavn = "FIX";
+
+                if (elm.PackageID == 0) 
+                    return pakkenavn;
+
+                var pakke = _repository.GetPackageByID(elm.PackageID);
+                if (pakke.Element == null) 
+                    return pakkenavn;
+
+                if (!pakke.Element.IsApplicationSchema() && !pakke.Element.IsUnderArbeid())
                 {
-                    if (pk.Element.Stereotype.ToLower() == "applicationschema" || pk.Element.Stereotype.ToLower() == "underarbeid")
-                    {
-                        string status = "";
-                        if (pk.Element.Stereotype.ToLower() == "underarbeid") status = " (under arbeid)";
-
-                        pnavn = pk.Element.Name + status;
-                        string kortnavn = "";
-                        string versjon = "";
-
-                        foreach (TaggedValue tag in pk.Element.TaggedValues)
-                        {
-                            switch (tag.Name.ToLower())
-                            {
-                                case "sosi_kortnavn":
-                                    kortnavn = tag.Value;
-                                    break;
-                                case "sosi_versjon":
-                                    versjon = tag.Value;
-                                    break;
-                            }
-
-                        }
-                        if (kortnavn.Length > 0)
-                        {
-                            pnavn = kortnavn + " " + versjon + status;
-                        }
-                    }
-                    else pnavn = HentApplicationSchemaPakkeNavn(pk.Element);
-                }
-            }
-            return pnavn;
-        }
-        private Basiselement LagKodelisteEgenskap(string prikknivå, Element elm, global::EA.Attribute att, List<Beskrankning> oclliste)
-        {
-
-            try
-            {
-
-                Basiselement eg = new Basiselement();
-                eg.UML_Navn = att.Name;
-                eg.SOSI_Navn = prikknivå;
-                eg.Notat = att.Notes;
-                eg.Standard = HentApplicationSchemaPakkeNavn(elm);
-
-                eg.Multiplisitet = "[" + att.LowerBound + ".." + att.UpperBound + "]";
-                bool sosi_navn = false;
-                bool sosi_lengde = false;
-                bool sosi_datatype = false;
-                eg.Datatype = "T";
-                eg.TillatteVerdier = new List<string>();
-                eg.Operator = "=";
-
-                bool beskrankVerdier = false;
-
-                foreach (Beskrankning be in oclliste)
-                {
-                    if (be.OCL != null)
-                    {
-
-                        if (be.OCL.Contains(att.Name) && be.OCL.ToLower().Contains("inv:") && be.OCL.ToLower().Contains("notempty") == false && be.OCL.ToLower().Contains("implies") == false && be.OCL.ToLower().Contains("and") == false)
-                        {
-
-                            if (be.OCL.Contains("=")) eg.Operator = "=";
-                            else if (be.OCL.Contains("&lt;&gt;")) eg.Operator = "!=";
-                            else
-                            {
-                                _repository.WriteOutput("System", "ADVARSEL: Fant beskrankning for " + att.Name + " i " + elm.Name + " men klarte ikke å løse operator uttrykket.", 0);
-                            }
-                            //finne verdier neste token etter operator, TODO må forbedres mye!!!
-                            string ocl = be.OCL.Substring(be.OCL.ToLower().IndexOf("inv:") + 4);
-                            string[] separators = { "'", "=", "&lt;&gt;", "or" };
-                            string[] tokens = ocl.Trim().Split(separators, StringSplitOptions.RemoveEmptyEntries);
-
-                            foreach (string verdi in tokens)
-                            {
-                                if ((verdi.Contains(att.Name)) == false && verdi.Trim().Length > 0)
-                                {
-                                    eg.TillatteVerdier.Add(verdi);
-                                    beskrankVerdier = true;
-                                }
-                            }
-
-
-                        }
-                    }
-
+                    elm = pakke.Element;
+                    continue;
                 }
 
-                if (beskrankVerdier == false)
+                var status = "";
+                if (pakke.Element.IsUnderArbeid())
+                    status = " (under arbeid)";
+
+                pakkenavn = pakke.Element.Name + status;
+                string kortnavn = "";
+                string versjon = "";
+
+                foreach (TaggedValue tag in pakke.Element.TaggedValues)
                 {
-
-                    foreach (global::EA.Attribute a in elm.Attributes)
+                    switch (tag.Name.ToLower())
                     {
-                        if (a.Default.Trim().Length > 0) eg.TillatteVerdier.Add(a.Default.Trim());
-                        else
-                        {
-                            bool sosi_verdi = false;
-                            string verdi = "";
-                            foreach (object tag in a.TaggedValues)
-                            {
-                                switch (((string)((dynamic)tag).Name).ToLower())
-                                {
-
-                                    case "sosi_verdi":
-                                        verdi = ((dynamic)tag).Value;
-                                        sosi_verdi = true;
-                                        break;
-                                }
-
-                            }
-                            if (sosi_verdi && verdi.Trim().Length > 0) eg.TillatteVerdier.Add(verdi.Trim());
-                            else
-                            {
-                                eg.TillatteVerdier.Add(a.Name);
-
-                            }
-                        }
-
-                    }
-                }
-
-                string datatype = eg.Datatype;
-                foreach (object tag in att.TaggedValues)
-                {
-                    switch (((string)((dynamic)tag).Name).ToLower())
-                    {
-
-                        case "sosi_navn":
-                            eg.SOSI_Navn = prikknivå + ((dynamic)tag).Value;
-                            if (((dynamic)tag).Value.Length > 0) sosi_navn = true;
+                        case "sosi_kortnavn":
+                            kortnavn = tag.Value;
+                            break;
+                        case "sosi_versjon":
+                            versjon = tag.Value;
                             break;
                     }
                 }
-                if (sosi_navn == false)
-                {
-                    foreach (object theTags2 in elm.TaggedValues)
-                    {
-                        switch (((string)((dynamic)theTags2).Name).ToLower())
-                        {
-                            case "length":
-                                eg.Datatype = datatype + ((dynamic)theTags2).Value;
-                                sosi_lengde = true;
-                                break;
-                            case "sosi_lengde":
-                                eg.Datatype = datatype + ((dynamic)theTags2).Value;
-                                sosi_lengde = true;
-                                break;
-                            case "sosi_datatype":
-                                datatype = datatype.Replace("T", ((dynamic)theTags2).Value);
-                                eg.Datatype = datatype;
-                                if (((dynamic)theTags2).Value.Length > 0) sosi_datatype = true;
-                                break;
-                            case "sosi_navn":
-                                eg.SOSI_Navn = prikknivå + ((dynamic)theTags2).Value;
-                                if (((dynamic)theTags2).Value.Length > 0) sosi_navn = true;
-                                break;
-                        }
 
+                return kortnavn.Length > 0 
+                    ? $"{kortnavn} {versjon}{status}" 
+                    : pakkenavn;
+            }
+        }
+
+        private Basiselement LagKodelisteEgenskap(string prikknivå, Element element, Attribute att, List<Beskrankning> oclListe)
+        {
+            try
+            {
+                var builder = new BasiselementBuilder(_repository, prikknivå, HentApplicationSchemaPakkeNavn(element));
+                var eg = builder.ForAttributt(att).MedDatatype("T").MedOperator("=").Opprett();
+
+                var harSosiNavn = false;
+                var harSosiLengde = false;
+
+                var codelistHelper = new CodelistHelper(_repository);
+
+                var verdierFraBeskrankninger = codelistHelper.HentTillatteVerdierFraBeskrankninger(element, att, oclListe, eg);
+                if (verdierFraBeskrankninger.Any())
+                {
+                    eg.TillatteVerdier.AddRange(verdierFraBeskrankninger);
+                }
+                else
+                {
+                    eg.TillatteVerdier.AddRange(codelistHelper.HentLokaleKodelisteverdier(element));
+                }
+
+                if (string.IsNullOrEmpty(eg.SOSI_Navn))
+                {
+                    var navn = RepositoryHelper.GetTaggedValue(element.TaggedValues, RepositoryHelper.SosiNavn);
+                    eg.SOSI_Navn = prikknivå + navn;
+                    if (!string.IsNullOrEmpty(navn))
+                        harSosiNavn = true;
+                }
+
+                var datatype = eg.Datatype;
+                foreach (TaggedValue tag in element.TaggedValues)
+                {
+                    switch (tag.Name.ToLower())
+                    {
+                        case "length":
+                            eg.Datatype = datatype + tag.Value;
+                            harSosiLengde = true;
+                            break;
+                        case "sosi_lengde":
+                            eg.Datatype = datatype + tag.Value;
+                            harSosiLengde = true;
+                            break;
+                        case "sosi_datatype":
+                            eg.Datatype = datatype.Replace("T", tag.Value);
+                            break;
                     }
                 }
-                if (sosi_lengde == false)
-                {
-                    foreach (object theTags2 in elm.TaggedValues)
-                    {
-                        switch (((string)((dynamic)theTags2).Name).ToLower())
-                        {
-                            case "length":
-                                eg.Datatype = datatype + ((dynamic)theTags2).Value;
-                                sosi_lengde = true;
-                                break;
-                            case "sosi_lengde":
-                                eg.Datatype = datatype + ((dynamic)theTags2).Value;
-                                sosi_lengde = true;
-                                break;
-                            case "sosi_datatype":
-                                datatype = datatype.Replace("T", ((dynamic)theTags2).Value);
-                                eg.Datatype = datatype;
-                                if (((dynamic)theTags2).Value.Length > 0) sosi_datatype = true;
-                                break;
+                
+                if (harSosiNavn == false) _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_navn på kodeliste " + element.Name + ", attributt: " + att.Name, 0);
+                if (harSosiLengde == false) _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_lengde på kodeliste " + element.Name + ", attributt: " + att.Name, 0);
 
-                        }
-
-                    }
-                }
-                if (sosi_datatype == false)
-                {
-                    foreach (object theTags2 in elm.TaggedValues)
-                    {
-                        switch (((string)((dynamic)theTags2).Name).ToLower())
-                        {
-                            case "sosi_datatype":
-                                datatype = datatype.Replace("T", ((dynamic)theTags2).Value);
-                                eg.Datatype = datatype;
-                                if (((dynamic)theTags2).Value.Length > 0) sosi_datatype = true;
-                                break;
-
-                        }
-
-                    }
-                }
-                if (sosi_navn == false) _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_navn på kodeliste " + elm.Name + ", attributt: " + att.Name, 0);
-                if (sosi_lengde == false) _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_lengde på kodeliste " + elm.Name + ", attributt: " + att.Name, 0);
-
-                foreach (Connector connector in elm.Connectors)
-                {
-                    if (connector.MetaType == "Generalization")
-                    {
-
-                        Element elmg = _repository.GetElementByID(connector.SupplierID);
-
-                        if (elm.Name != elmg.Name)
-                        {
-                            foreach (global::EA.Attribute a in elmg.Attributes)
-                            {
-
-                                if (a.Default.Trim().Length > 0) eg.TillatteVerdier.Add(a.Default.Trim());
-                                else
-                                {
-
-                                    bool sosi_verdi = false;
-                                    string verdi = "";
-                                    foreach (object tag in a.TaggedValues)
-                                    {
-                                        switch (((string)((dynamic)tag).Name).ToLower())
-                                        {
-
-                                            case "sosi_verdi":
-                                                verdi = ((dynamic)tag).Value;
-                                                sosi_verdi = true;
-                                                break;
-                                        }
-
-                                    }
-                                    if (sosi_verdi && verdi.Trim().Length > 0) eg.TillatteVerdier.Add(verdi.Trim());
-                                    else
-                                    {
-
-                                        eg.TillatteVerdier.Add(a.Name);
-
-                                    }
-                                }
-
-                            }
-                        }
-                    }
-                }
+                eg.TillatteVerdier.AddRange(codelistHelper.HentArvedeKodeverdier(element));
                 return eg;
             }
             catch (Exception e)
@@ -1638,263 +1205,74 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 _repository.WriteOutput("System", "FEIL: " + e.Message + " " + e.Source, 0);
                 return null;
             }
-
         }
 
-        private Basiselement LagEgenskap(string prikknivå, global::EA.Attribute att, string standard)
+        private Basiselement LagEgenskap(string prikknivå, Attribute att, string standard)
         {
-            bool sosi_navn = false;
-            Basiselement eg = new Basiselement();
-            eg.UML_Navn = att.Name;
-            eg.SOSI_Navn = prikknivå;
-            eg.Notat = att.Notes;
-            eg.Standard = standard;
+            var builder = new BasiselementBuilder(_repository, prikknivå, standard);
 
-            eg.Multiplisitet = "[" + att.LowerBound + ".." + att.UpperBound + "]";
-            eg.TillatteVerdier = new List<string>();
-            eg.Datatype = "FIX";
+            var basiselement = builder.ForAttributt(att).MedMappingAvBasistyper().Opprett();
 
-            bool basistypeIkkeFunnet = true;
+            if (basiselement.SOSI_Navn.TrimStart('.').Length > 32)
+                _repository.WriteOutput("System", "FEIL: tagged value SOSI_navn er lengre enn 32 tegn på attributt: " + att.Name, 0);
 
-            switch (att.Type.ToLower())
-            {
-                case "characterstring":
-                    eg.Datatype = "T";
-                    if (att.Default.Length > 0) eg.TillatteVerdier.Add(att.Default);
-
-                    basistypeIkkeFunnet = false;
-                    break;
-                case "integer":
-                    eg.Datatype = "H";
-                    if (att.Default.Length > 0) eg.TillatteVerdier.Add(att.Default);
-
-                    basistypeIkkeFunnet = false;
-                    break;
-                case "real":
-                    eg.Datatype = "D";
-                    if (att.Default.Length > 0) eg.TillatteVerdier.Add(att.Default);
-
-                    basistypeIkkeFunnet = false;
-                    break;
-                case "date":
-                    eg.Datatype = "DATO";
-                    if (att.Default.Length > 0) eg.TillatteVerdier.Add(att.Default);
-
-                    basistypeIkkeFunnet = false;
-                    break;
-                case "datetime":
-                    eg.Datatype = "DATOTID";
-                    if (att.Default.Length > 0) eg.TillatteVerdier.Add(att.Default);
-
-                    basistypeIkkeFunnet = false;
-                    break;
-                case "boolean":
-                    eg.Datatype = "BOOLSK";
-                    eg.Operator = "=";
-                    eg.TillatteVerdier.Add("JA");
-                    eg.TillatteVerdier.Add("NEI");
-
-                    basistypeIkkeFunnet = false;
-                    break;
-                case "flate":
-                    eg.Datatype = "FLATE";
-
-                    basistypeIkkeFunnet = false;
-                    break;
-                case "punkt":
-                    eg.Datatype = "PUNKT";
-                    basistypeIkkeFunnet = false;
-                    break;
-                case "kurve":
-                    eg.Datatype = "KURVE";
-
-                    basistypeIkkeFunnet = false;
-                    break;
-            }
-            if (basistypeIkkeFunnet)
-            {
-                _repository.WriteOutput("System", "FEIL: datatype er ikke korrekt/funnet: " + att.Name + " " + att.Type, 0);
-            }
-            string datatype = eg.Datatype;
-
-            foreach (object theTags2 in att.TaggedValues)
-            {
-
-                string navn = (string)((dynamic)theTags2).Name;
-
-                switch (navn.ToLower())
-                {
-
-                    case "sosi_lengde":
-                        eg.Datatype = datatype + ((dynamic)theTags2).Value;
-
-                        break;
-                    case "sosi_navn":
-                        string verdi = (string)((dynamic)theTags2).Value;
-                        if (verdi.Length > 0)
-                        {
-                            eg.SOSI_Navn = prikknivå + ((dynamic)theTags2).Value;
-                            sosi_navn = true;
-                        }
-                        break;
-
-                }
-
-            }
-            if (sosi_navn == false) _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_navn på attributt: " + att.Name, 0);
-            if (eg.SOSI_Navn.TrimStart('.').Length > 32) _repository.WriteOutput("System", "FEIL: tagged value SOSI_navn er lengre enn 32 tegn på attributt: " + att.Name, 0);
-            return eg;
+            return basiselement;
         }
 
-        private Basiselement LagBasiselementForKjentType(string prikknivå, global::EA.Attribute att, string standard, KjentType kt)
+        public static IEnumerable<SosiKodeliste> ByggSosiKodelister(Package valgtPakke)
         {
-            bool sosi_navn = false;
-            Basiselement eg = new Basiselement();
-            eg.UML_Navn = att.Name;
-            eg.SOSI_Navn = prikknivå;
-            eg.Notat = att.Notes;
-            eg.Standard = standard;
+            var kodelister = valgtPakke.Elements.Cast<Element>().Where(e => e.IsCodeList())
+                .Select(LagSosiKodeliste).Where(kodeliste => kodeliste != null).ToList();
 
-            eg.Multiplisitet = "[" + att.LowerBound + ".." + att.UpperBound + "]";
-            eg.TillatteVerdier = new List<string>();
-            eg.Datatype = kt.Datatype;
+            foreach (Package subPakke in valgtPakke.Packages)
+                kodelister.AddRange(ByggSosiKodelister(subPakke));
 
-            foreach (object theTags2 in att.TaggedValues)
-            {
-
-                string navn = (string)((dynamic)theTags2).Name;
-
-                switch (navn.ToLower())
-                {
-                    case "sosi_navn":
-                        string verdi = (string)((dynamic)theTags2).Value;
-                        if (verdi.Length > 0)
-                        {
-                            eg.SOSI_Navn = prikknivå + ((dynamic)theTags2).Value;
-                            sosi_navn = true;
-                        }
-                        break;
-
-                }
-
-            }
-            if (sosi_navn == false && att.ClassifierID != 0)
-            {
-
-                Element elm = _repository.GetElementByID(att.ClassifierID);
-
-                //Finne SOSI_navn på klasse
-                foreach (object theTags2 in elm.TaggedValues)
-                {
-                    switch (((string)((dynamic)theTags2).Name).ToLower())
-                    {
-
-                        case "sosi_navn":
-                            eg.SOSI_Navn = prikknivå + ((dynamic)theTags2).Value;
-                            if (((dynamic)theTags2).Value.Length > 0) sosi_navn = true;
-                            break;
-                    }
-
-                }
-
-            }
-            if (sosi_navn == false) _repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_navn på attributt: " + att.Name, 0);
-
-            return eg;
+            return kodelister;
         }
 
-        public List<SosiKodeliste> ByggSosiKodelister()
+        private static SosiKodeliste LagSosiKodeliste(IDualElement element)
         {
-            List<SosiKodeliste> kList = new List<SosiKodeliste>();
+            var erSosiKodeliste = false;
 
-            Package valgtPakke = _repository.GetTreeSelectedPackage();
-
-
-
-            foreach (Element el in valgtPakke.Elements)
+            var kodeliste = new SosiKodeliste
             {
+                Verdier = new List<SosiKode>(),
+                Navn = element.Name
+            };
 
-                if (el.Stereotype.ToLower() == "codelist" || el.Stereotype.ToLower() == "enumeration" || el.Type.ToLower() == "enumeration")
+            foreach (Attribute attributt in element.Attributes)
+            {
+                var sosiKode = new SosiKode
                 {
-                    LagSosiKodeliste(el, kList);
-                }
+                    Navn = attributt.Name,
+                    Beskrivelse = attributt.Notes.Trim()
+                };
 
-            }
-
-            HentKodelisterFraSubpakker(kList, valgtPakke);
-
-
-            return kList;
-        }
-
-        private void HentKodelisterFraSubpakker(List<SosiKodeliste> kList, Package valgtPakke)
-        {
-            foreach (Package pk in valgtPakke.Packages)
-            {
-                foreach (Element ele in pk.Elements)
+                if (attributt.Default.Trim().Length > 0)
                 {
-                    if (ele.Stereotype.ToLower() == "codelist" || ele.Stereotype.ToLower() == "enumeration" || ele.Type.ToLower() == "enumeration")
-                    {
-                        LagSosiKodeliste(ele, kList);
-                    }
+                    sosiKode.SosiVerdi = attributt.Default.Trim();
                 }
-
-                HentKodelisterFraSubpakker(kList, pk);
-            }
-        }
-
-        public void LagSosiKodeliste(Element e, List<SosiKodeliste> kList)
-        {
-            bool erSOSIKodeliste = false;
-
-            SosiKodeliste kl = new SosiKodeliste();
-            kl.Verdier = new List<SosiKode>();
-            kl.Navn = e.Name;
-
-            foreach (global::EA.Attribute a in e.Attributes)
-            {
-                SosiKode k = new SosiKode();
-
-                k.Navn = a.Name;
-                k.Beskrivelse = a.Notes.Trim();
-
-                if (a.Default.Trim().Length > 0) k.SosiVerdi = a.Default.Trim();
                 else
                 {
-
-                    bool sosi_verdi = false;
-                    string verdi = "";
-                    foreach (object tag in a.TaggedValues)
+                    var sosiVerdi = RepositoryHelper.GetTaggedValue(attributt.TaggedValues, RepositoryHelper.SosiVerdi);
+                    if (sosiVerdi != null)
                     {
-                        switch (((string)((dynamic)tag).Name).ToLower())
+                        sosiVerdi = sosiVerdi.Trim();
+                        if (sosiVerdi.Length > 0)
                         {
-
-                            case "sosi_verdi":
-                                verdi = ((dynamic)tag).Value;
-                                sosi_verdi = true;
-
-                                break;
+                            sosiKode.SosiVerdi = sosiVerdi;
+                            erSosiKodeliste = true;
                         }
-
-                    }
-                    if (sosi_verdi && verdi.Trim().Length > 0)
-                    {
-                        k.SosiVerdi = verdi.Trim();
-                        erSOSIKodeliste = true;
                     }
                     else
                     {
-
-                        k.SosiVerdi = a.Name;
+                        sosiKode.SosiVerdi = attributt.Name;
                     }
                 }
-                kl.Verdier.Add(k);
+                kodeliste.Verdier.Add(sosiKode);
+            }
 
-            }
-            if (erSOSIKodeliste)
-            {
-                kList.Add(kl);
-            }
+            return erSosiKodeliste ? kodeliste : null;
         }
     }
 }

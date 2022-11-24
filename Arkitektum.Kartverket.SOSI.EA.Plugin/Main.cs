@@ -225,7 +225,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin
 
                     Sosimodell modell = new Sosimodell(Repository);
                     List<Objekttype> otList = modell.ByggObjektstruktur();
-                    List<SosiKodeliste> kodeList = modell.ByggSosiKodelister();
+                    IEnumerable<SosiKodeliste> kodeList = Sosimodell.ByggSosiKodelister(valgtPakke);
                    
                     XDocument doc = new ObjektKatalogGenerator().LagObjektKatalog(versjon, organisasjon, person, navn, beskrivelse, otList, isFag, kodeList);
                     doc.Save(xmlfil);
@@ -270,7 +270,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin
 
                     Sosimodell modell = new Sosimodell(Repository);
                     List<Objekttype> otList = modell.ByggObjektstruktur();
-                    List<SosiKodeliste> kodeList = modell.ByggSosiKodelister();
+                    IEnumerable<SosiKodeliste> kodeList = Sosimodell.ByggSosiKodelister(valgtPakke);
                     string eadirectory = Path.GetDirectoryName(Repository.ConnectionString);
                     
                     var gen = new WordSOSIRealiseringGenerator();

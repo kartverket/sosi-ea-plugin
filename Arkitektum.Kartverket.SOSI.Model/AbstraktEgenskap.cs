@@ -21,5 +21,13 @@ namespace Arkitektum.Kartverket.SOSI.Model
         public string Multiplisitet { get; set; }
 
         public string Notat { get; set; }
+
+        public void FiksMultiplisitet()
+        {
+            Multiplisitet = Multiplisitet.Replace("[0]", "[0..1]");
+            Multiplisitet = Multiplisitet.Replace("[0..]", "[0..*]");
+            Multiplisitet = Multiplisitet.Replace("[1..]", "[1..*]");
+            Multiplisitet = Multiplisitet.Replace("[1]", "[1..1]");
+        }
     }
 }

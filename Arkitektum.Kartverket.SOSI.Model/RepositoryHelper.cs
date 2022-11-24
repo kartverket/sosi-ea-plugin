@@ -7,9 +7,13 @@ namespace Arkitektum.Kartverket.SOSI.Model
     public class RepositoryHelper
     {
         private readonly Repository _repository;
+
         public const string SosiNavn = "sosi_navn";
         public const string SosiDatatype = "sosi_datatype";
         public const string SosiLengde = "sosi_lengde";
+        public const string SosiVerdi = "sosi_verdi";
+        public const string SosiKortnavn = "sosi_kortnavn";
+        public const string SosiVersjon = "sosi_versjon";
 
         public RepositoryHelper(Repository repository)
         {
@@ -41,19 +45,40 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
         public static string GetTaggedValue(Collection taggedValues, string searchString)
         {
-            string result = null;
             foreach (dynamic tag in taggedValues)
             {
-                string tagName = (string)tag.Name;
-                if (string.Equals(tagName, searchString, StringComparison.OrdinalIgnoreCase))
+                if (tag.Name.Equals(searchString, StringComparison.OrdinalIgnoreCase))
                 {
-                    result = (string)tag.Value;
-                    break;
+                    return tag.Value.Trim();
                 }
             }
-            return result;
+            return null;
         }
-        
+
+        public static string GetRoleTaggedValue(Collection taggedValues, string searchString)
+        {
+            foreach (dynamic tag in taggedValues)
+            {
+                if (tag.Tag.Equals(searchString, StringComparison.OrdinalIgnoreCase))
+                {
+                    return tag.Value.Trim();
+                }
+            }
+            return null;
+        }
+
+        public static string GetConnectorTaggedValue(Collection taggedValues, string searchString)
+        {
+            foreach (dynamic tag in taggedValues)
+            {
+                if (tag.Name.Equals(searchString, StringComparison.OrdinalIgnoreCase))
+                {
+                    return tag.Value.Trim();
+                }
+            }
+            return null;
+        }
+
         public void Log(string message)
         {
             _repository.WriteOutput("System", message, 0);

@@ -12,7 +12,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
 {
     public class WordSOSIRealiseringGenerator
     {
-        public void LagWordRapportSosiSyntaks(List<Objekttype> otList, bool isFag, List<SosiKodeliste> kodeList, string pakke)
+        public void LagWordRapportSosiSyntaks(List<Objekttype> otList, bool isFag, IEnumerable<SosiKodeliste> kodeList, string pakke)
         {
 
             try
@@ -181,7 +181,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
                     }
                 }
 
-                if (kodeList.Count > 0)
+                if (kodeList.Any())
                 {
                     int I1 = oDoc.Paragraphs.Count;
                     oDoc.Paragraphs[I1].Range.InsertAfter("Kodelister");
