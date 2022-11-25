@@ -62,9 +62,10 @@
     <Compile Include="Sosimodell.cs" />
     <Compile Include="Utils\AttributeExtensions.cs" />
     <Compile Include="Utils\AttributeTypeMapper.cs" />
-    <Compile Include="Utils\CodelistHelper.cs" />
+    <Compile Include="Utils\Codelist\CodelistHelper.cs" />
     <Compile Include="Utils\ConnectorExtensions.cs" />
     <Compile Include="Utils\ElementExtensions.cs" />
+    <Compile Include="Utils\Codelist\ExternalCodelistFetcher.cs" />
     <Compile Include="Utils\KjentTypeMapper.cs" />
   </ItemGroup>
   <ItemGroup />

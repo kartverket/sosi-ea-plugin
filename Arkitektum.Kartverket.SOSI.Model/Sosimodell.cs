@@ -1162,6 +1162,10 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 {
                     eg.TillatteVerdier.AddRange(verdierFraBeskrankninger);
                 }
+                else if (element.IsTaggedAsExternalCodelist())
+                {
+                    eg.TillatteVerdier.AddRange(codelistHelper.HentEksterneKodelisteverdier(element));
+                }
                 else
                 {
                     eg.TillatteVerdier.AddRange(codelistHelper.HentLokaleKodelisteverdier(element));

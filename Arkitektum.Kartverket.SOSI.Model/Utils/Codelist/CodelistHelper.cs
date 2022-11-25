@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
 using EA;
 using Attribute = EA.Attribute;
 
@@ -56,6 +57,30 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         }
                     }
                 }
+            }
+        }
+
+        public IEnumerable<string> HentEksterneKodelisteverdier(Element element)
+        {
+            var codelistUrl = RepositoryHelper.GetTaggedValue(element.TaggedValues, "codeList");
+
+            var externalCodeList = new ExternalCodelistFetcher(_repositoryHelper).Fetch(codelistUrl);
+
+            if (string.IsNullOrEmpty(externalCodeList))
+                yield break;
+
+            var xmlDocument = new XmlDocument();
+
+            xmlDocument.LoadXml(externalCodeList);
+
+            var dictionaryEntries = xmlDocument["gml:Dictionary"]?.GetElementsByTagName("gml:dictionaryEntry");
+
+            if (dictionaryEntries == null)
+                yield break;
+
+            foreach (XmlElement dictionaryEntry in dictionaryEntries)
+            {
+               yield return dictionaryEntry["gml:Definition"]["gml:identifier"]?.InnerText;
             }
         }
 
