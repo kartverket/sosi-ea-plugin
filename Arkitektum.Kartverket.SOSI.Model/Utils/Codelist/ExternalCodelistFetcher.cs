@@ -21,7 +21,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
                 using (var client = new WebClient())
                 {
-                    client.Headers.Add(HttpRequestHeader.Accept, "application/xml"); // TODO: Use "application/gml+xml" when prepared for in production environment
+                    client.Headers.Add(HttpRequestHeader.Accept, "application/gml+xml");
                     client.Encoding = Encoding.UTF8;
 
                     return client.DownloadString(url);
