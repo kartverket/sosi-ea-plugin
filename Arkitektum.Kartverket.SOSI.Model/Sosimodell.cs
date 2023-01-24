@@ -1171,6 +1171,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     eg.TillatteVerdier.AddRange(codelistHelper.HentLokaleKodelisteverdier(element));
                 }
 
+                eg.TillatteVerdier.Sort();
+
                 if (string.IsNullOrEmpty(eg.SOSI_Navn))
                 {
                     var navn = RepositoryHelper.GetTaggedValue(element.TaggedValues, RepositoryHelper.SosiNavn);
