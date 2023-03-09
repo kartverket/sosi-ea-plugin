@@ -94,7 +94,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         Objekttype avgrensesAvObjekttype = FinnObjekttypeMedNavn(objekttyper, avgrensesAv);
                         if (avgrensesAvObjekttype == null)
                         {
-                            LoggDebug("Finner ikke objektet [{avgrensesAv}] som avgrenser objekttypen [{objekttype.UML_Navn}]");
+                            LoggDebug($"Finner ikke objektet [{avgrensesAv}] som avgrenser objekttypen [{objekttype.UML_Navn}]");
                             continue;
                         }
 
