@@ -11,6 +11,9 @@ namespace Arkitektum.Kartverket.SOSI.Model
         private readonly Repository _repository;
 
         private List<Objekttype> _objekttyper;
+
+        private static Dictionary<string, HashSet<string>> _topoAvgrensningerLagtTilFraUmlConstraints;
+
         public Sosimodell(Repository repository)
         {
             this._repository = repository;
@@ -19,71 +22,22 @@ namespace Arkitektum.Kartverket.SOSI.Model
         public List<Objekttype> ByggObjektstruktur()
         {
             _objekttyper = new List<Objekttype>();
+            _topoAvgrensningerLagtTilFraUmlConstraints = new Dictionary<string, HashSet<string>>();
 
             Package valgtPakke = _repository.GetTreeSelectedPackage();
 
             _objekttyper = LagObjekttyperForElementerIPakke(valgtPakke);
 
-            if (SkalLeggeTilFlateavgrensning(_objekttyper, out var navnPaFlaterSomManglerFlateavgrensning))
-            {
-                Logg("Legger til Flateavgrensning");
-                _objekttyper.Add(OpprettFlateavgrensning(HentApplicationSchemaPakkeNavn(valgtPakke.Element), navnPaFlaterSomManglerFlateavgrensning));
-            }
+            LeggTilFlateavgrensningForFlaterSomManglerAvgrensning(_objekttyper);
 
-            if (SkalLeggeTilKantUtsnitt(_objekttyper))
-            {
-                Logg("Ingen objekter med navn KantUtsnitt funnet. Legger til KantUtsnitt");
-                _objekttyper.Add(OpprettKantUtsnitt(HentApplicationSchemaPakkeNavn(valgtPakke.Element)));
-            }
-
+            LeggAvgrensedeObjekterTilAvgrensendeObjekter();
 
             return _objekttyper;
         }
 
-        private bool SkalLeggeTilKantUtsnitt(List<Objekttype> objekttyper)
-        {
-            return objekttyper.Any(o => o.HarGeometri("flate"))
-                && !objekttyper.Any(o => string.Equals(o.UML_Navn, "KantUtsnitt", StringComparison.InvariantCultureIgnoreCase));
-        }
-
-        private Objekttype OpprettKantUtsnitt(string standard)
-        {
-            return new Objekttype()
-            {
-                UML_Navn = "KantUtsnitt",
-                ErOpprettetMaskinelt = true,
-
-                // Maskinelt opprettet KantUtsnitt skrives som
-                // "..INKLUDER KantUtsnitt" i SOSIKontrollGenerator
-
-                Geometrityper = new List<string>() { "KURVE" },
-                Standard = standard,
-                Egenskaper = new List<AbstraktEgenskap>()
-                {
-                    new Basiselement()
-                    {
-                        SOSI_Navn = "..OBJTYPE",
-                        Operator =  "=",
-                        TillatteVerdier = new List<string> {"KantUtsnitt"},
-                        Multiplisitet = "[1..1]",
-                        Datatype = "T12"
-                    }
-                },
-                OCLconstraints = new List<Beskrankning>
-                {
-                    new Beskrankning()
-                    {
-                        Navn = "KantUtsnitt",
-                        Notat = "Objekttypen kan forekomme som et resultat av klipping av datasettet."
-                    }
-                }
-            };
-        }
-
-        private bool SkalLeggeTilFlateavgrensning(List<Objekttype> objekttyper, out List<string> navnPaFlaterSomManglerFlateavgrensning)
+        private void LeggTilFlateavgrensningForFlaterSomManglerAvgrensning(List<Objekttype> objekttyper)
         {
             var flaterSomManglerFlateavgrensning = objekttyper.Where(o => o.HarGeometri("flate") && o.AvgrensesAv.Count == 0).ToList();
-            navnPaFlaterSomManglerFlateavgrensning = new List<string>();
 
             foreach (Objekttype objekttype in objekttyper)
             {
@@ -111,10 +65,20 @@ namespace Arkitektum.Kartverket.SOSI.Model
             {
                 Logg($"Flaten i {objekttype.UML_Navn} mangler avgrensninger, legger til egen flateavgrensning");
                 objekttype.AvgrensesAv.Add("Flateavgrensning");
-                navnPaFlaterSomManglerFlateavgrensning.Add(objekttype.UML_Navn);
             }
+        }
 
-            return flaterSomManglerFlateavgrensning.Any();
+        private void LeggAvgrensedeObjekterTilAvgrensendeObjekter()
+        {
+            foreach (var objekttype in _objekttyper)
+            {
+                var objekttypeUmlNavn = objekttype.UML_Navn;
+
+                if (!_topoAvgrensningerLagtTilFraUmlConstraints.ContainsKey(objekttypeUmlNavn))
+                    continue;
+
+                objekttype.Avgrenser.AddRange(_topoAvgrensningerLagtTilFraUmlConstraints[objekttypeUmlNavn]);
+            }
         }
 
         private void LoggDebug(string melding)
@@ -132,36 +96,6 @@ namespace Arkitektum.Kartverket.SOSI.Model
         private Objekttype FinnObjekttypeMedNavn(List<Objekttype> objekttyper, string navn)
         {
             return objekttyper.FirstOrDefault(o => string.Equals(o.UML_Navn, navn, StringComparison.InvariantCultureIgnoreCase));
-        }
-
-        private static Objekttype OpprettFlateavgrensning(string standard, List<string> navnPaFlaterSomManglerFlateavgrensning)
-        {
-            return new Objekttype()
-            {
-                UML_Navn = "Flateavgrensning",
-                Geometrityper = new List<string>() { "KURVE" },
-                Standard = standard,
-                Egenskaper = new List<AbstraktEgenskap>()
-                {
-                    new Basiselement()
-                    {
-                        SOSI_Navn = "..OBJTYPE",
-                        Operator =  "=",
-                        TillatteVerdier = new List<string> {"Flateavgrensning"},
-                        Multiplisitet = "[1..1]",
-                        Datatype = "T18"
-                    }
-                },
-                OCLconstraints = new List<Beskrankning>
-                {
-                    new Beskrankning()
-                    {
-                        Navn = "Flateavgrensning",
-                        Notat = "Objekttypen er lagt til for å avgrense flaten for å tilfredsstille geometrimodellen i SOSI-formatet."
-                    }
-                },
-                Avgrenser = navnPaFlaterSomManglerFlateavgrensning,
-            };
         }
 
         private List<Objekttype> LagObjekttyperForElementerIPakke(Package pakke)
@@ -235,7 +169,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
             objekttype.LeggTilBeskrankninger(LagBeskrankninger(element));
 
             //Sjekk for modell 5 regler på topo/avgrensninger
-            var avgrensninger = LagTopoAvgrensninger(element);
+            var avgrensninger = LagTopoAvgrensninger(element, objekttype.UML_Navn);
             if (avgrensninger.Any())
                 objekttype.AvgrensesAv.AddRange(avgrensninger);
 
@@ -244,7 +178,6 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 try
                 {
                     var type = GetAttributeType(att.Type);
-
                     if (type == "flate" || type == "punkt" || type == "sverm")
                     {
                         objekttype.Geometrityper.Add(type.ToUpper());
@@ -303,7 +236,10 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     Element destination = _repository.GetElementByID(connector.ClientID);
 
                     var isSource = source.Name == element.Name;
-
+                    if (objekttype.AvgrensesAv.Contains(source.Name))
+                    {
+                        continue;
+                    }
                     if (connector.IsTopoType())
                     {
                         AddTopo(element, objekttype, connector, source, destination);
@@ -344,10 +280,11 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     }
                 }
             }
+
             return objekttype;
         }
 
-        private static IEnumerable<string> LagTopoAvgrensninger(Element element)
+        private static IEnumerable<string> LagTopoAvgrensninger(Element element, string elementUmlName)
         {
             foreach (Constraint constraint in element.Constraints.Cast<Constraint>()
                          .Where(c => c.Name.StartsWith("KanAvgrensesAv")))
@@ -356,8 +293,24 @@ namespace Arkitektum.Kartverket.SOSI.Model
                 var objectTypes = objectTypeNames.Split(',');
                 foreach (var objectType in objectTypes)
                 {
-                    yield return objectType.Trim();
+                    var trimmedObjectType = objectType.Trim();
+                    MapConstrainedObjectNamesToConstrainingObjectName(elementUmlName, trimmedObjectType);
+                    yield return trimmedObjectType;
                 }
+            }
+        }
+
+        private static void MapConstrainedObjectNamesToConstrainingObjectName(
+            string constrainedObjectName, string constrainingObjectName)
+        {
+            if (_topoAvgrensningerLagtTilFraUmlConstraints.ContainsKey(constrainingObjectName))
+            {
+                _topoAvgrensningerLagtTilFraUmlConstraints[constrainingObjectName].Add(constrainedObjectName);
+            }
+            else
+            {
+                _topoAvgrensningerLagtTilFraUmlConstraints.Add(constrainingObjectName,
+                    new HashSet<string> { constrainedObjectName });
             }
         }
 
@@ -1133,7 +1086,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
                         case "sosi_kortnavn":
                             kortnavn = tag.Value;
                             break;
-                        case "sosi_versjon":
+                        case "version":
                             versjon = tag.Value;
                             break;
                     }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Arkitektum.Kartverket.SOSI.Model;
 
@@ -10,11 +11,24 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
 {
     public class SosiKontrollGenerator
     {
+        private static readonly List<string> NgisDatasetShortnames = new List<string>
+        {
+            "FKB",
+            "Havnedata",
+            //"N5", spesialhåndtert i metoden som utfører sjekk
+            "TUROGFRILUFTSRUTER",
+            "MARKAGRENSEN",
+            "SPR"
+        };
+
+        private bool _datasettErForvaltetMedNgis;
+
         public void GenererDefFiler(List<Objekttype> liste, Repository repository)
         {
             string produktgruppe = "";
             string kortnavn = "";
             string versjon = "";
+            string sosiVersion = "";
             string versjonUtenP = "";
             bool fagområde = false;
 
@@ -37,21 +51,26 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
                         versjon = theTags.Value;
                         versjonUtenP = versjon.Replace(".", "");
                         break;
+                    case "sosi_versjon":
+                        sosiVersion = theTags.Value;
+                        break;
                 }
 
             }
             if (produktgruppe == "") repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_produktgruppe på applikasjonsskjemapakke " + valgtPakke.Element.Name, 0);
             if (kortnavn == "") repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_kortnavn på applikasjonsskjemapakke " + valgtPakke.Element.Name, 0);
             if (versjon == "") repository.WriteOutput("System", "FEIL: Mangler tagged value version på applikasjonsskjemapakke " + valgtPakke.Element.Name, 0);
+            if (sosiVersion == "") repository.WriteOutput("System", "FEIL: Mangler tagged value sosi_versjon på applikasjonsskjemapakke " + valgtPakke.Element.Name, 0);
 
+            _datasettErForvaltetMedNgis = ErForvaltetMedNgis(kortnavn);
 
             //Lage kataloger
             string eadirectory = Path.GetDirectoryName(repository.ConnectionString);
-            string baseDirectory = eadirectory + @"\def\";
-            string fullfil = baseDirectory + produktgruppe + @"\kap" + versjonUtenP + @"\" + kortnavn + @"_o." + versjonUtenP;
-            string utvalgfil = baseDirectory + produktgruppe + @"\kap" + versjonUtenP + @"\" + kortnavn + @"_u." + versjonUtenP;
-            string deffil = baseDirectory + produktgruppe + @"\kap" + versjonUtenP + @"\" + kortnavn + @"_d." + versjonUtenP;
-            string defkatalogfil = baseDirectory + produktgruppe + @"\Def_" + kortnavn + "." + versjonUtenP;
+            string baseDirectory = Path.Combine(eadirectory, "def");
+            string fullfil = Path.Combine(baseDirectory, produktgruppe, kortnavn, $"{kortnavn}_o.{versjonUtenP}");
+            string utvalgfil = Path.Combine(baseDirectory, produktgruppe, kortnavn, $"{kortnavn}_u.{versjonUtenP}");
+            string deffil = Path.Combine(baseDirectory, produktgruppe, kortnavn, $"{kortnavn}_d.{versjonUtenP}");
+            string defkatalogfil = Path.Combine(baseDirectory, produktgruppe, $"Def_{kortnavn}.{versjonUtenP}");
 
             string katalog = Path.GetDirectoryName(fullfil);
 
@@ -63,16 +82,18 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
             using (var file = new StreamWriter(defkatalogfil, false, Encoding.GetEncoding(1252)))
             {
                 file.WriteLine("[SyntaksDefinisjoner]");
-                file.WriteLine(deffil.Replace(eadirectory + @"\def\" + produktgruppe, ""));
+                file.WriteLine(deffil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
+                file.WriteLine($@"..\std\SOSISTD.{(sosiVersion == "4.5" ? "451" : "50")}");
                 file.WriteLine("");
                 file.WriteLine("[KodeForklaringer]");
-                file.WriteLine(@"\std\KODER." + versjonUtenP);
+                file.WriteLine($@"..\std\KODER.{(sosiVersion == "4.5" ? "45" : "50")}");
                 file.WriteLine("");
                 file.WriteLine("[UtvalgsRegler]");
-                file.WriteLine(utvalgfil.Replace(eadirectory + @"\def\" + produktgruppe, ""));
+                file.WriteLine(utvalgfil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
                 file.WriteLine("");
                 file.WriteLine("[ObjektDefinisjoner]");
-                file.WriteLine(fullfil.Replace(eadirectory + @"\def\" + produktgruppe, ""));
+                file.WriteLine(fullfil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
+                file.WriteLine(@"..\std\Objektavgrensning.50"); //todo: bare dersom datasett inneholder flater?
             }
 
             using (var file = new StreamWriter(deffil, false, Encoding.GetEncoding(1252)))
@@ -172,7 +193,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
                 file.WriteLine("! ***************************************************************************!");
                 file.WriteLine("! * SOSI-kontroll                                             " + kortnavn.ToUpper() + "-OBJEKTER *!");
                 file.WriteLine("! * Objektdefinisjoner for " + kortnavn.ToUpper() + "          				                    *!");
-                file.WriteLine("! *                            SOSI versjon  " + versjon + "                   *!");
+                file.WriteLine("! *                            SOSI versjon  " + sosiVersion + "                            *!");
                 file.WriteLine("! ***************************************************************************!");
                 file.WriteLine("! *           Følger databeskrivelsene i Del 1, Praktisk bruk               *!");
                 file.WriteLine("! *            og databeskrivelsene i Objektkatalogen,                      *!");
@@ -198,7 +219,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
                 file.WriteLine("! ***************************************************************************!");
                 file.WriteLine("! * SOSI-kontroll                                             " + kortnavn.ToUpper() + "-UTVALG *!");
                 file.WriteLine("! * Utvalgsregler for " + kortnavn.ToUpper() + "          				                    *!");
-                file.WriteLine("! *                            SOSI versjon  " + versjon + "                   *!");
+                file.WriteLine("! *                            SOSI versjon  " + sosiVersion + "                            *!");
                 file.WriteLine("! ***************************************************************************!");
                 file.WriteLine("! *           Følger databeskrivelsene i Del 1, Praktisk bruk               *!");
                 file.WriteLine("! *            og databeskrivelsene i Objektkatalogen,                      *!");
@@ -307,39 +328,51 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
             StringBuilder builder = new StringBuilder(Environment.NewLine);
             builder.AppendLine(".OBJEKTTYPE");
 
-            if (o.ErFlateavgrensningObjekt())
+            builder.Append("..TYPENAVN ").AppendLine(o.UML_Navn);
+            if (o.Geometrityper.Count > 0)
+                builder.Append("..GEOMETRITYPE ").AppendLine(string.Join(",", o.Geometrityper.ToArray(), 0, o.Geometrityper.Count));
+            if (o.AvgrensesAv.Count > 0)
             {
-                builder.Append("..INKLUDER Flateavgrensning");
-            }
-            else if (o.ErKantUtsnittObjekt() && o.ErOpprettetMaskinelt)
-            {
-                builder.Append("..INKLUDER KantUtsnitt");
-            }
-            else
-            {
-                builder.Append("..TYPENAVN ").AppendLine(o.UML_Navn);
-                if (o.Geometrityper.Count > 0)
-                    builder.Append("..GEOMETRITYPE ").AppendLine(string.Join(",", o.Geometrityper.ToArray(), 0, o.Geometrityper.Count));
-                if (o.AvgrensesAv.Count > 0)
-                    builder.Append("..AVGRENSES_AV ").AppendLine(string.Join(",", o.AvgrensesAv.ToArray(), 0, o.AvgrensesAv.Count));
-                if (o.Avgrenser.Count > 0)
-                    builder.Append("..AVGRENSER ").AppendLine(string.Join(",", o.Avgrenser.ToArray(), 0, o.Avgrenser.Count));
-
-                builder.Append("..PRODUKTSPEK ").AppendLine(o.Standard.ToUpper());
-
-                if (isFagområde)
-                    builder.AppendLine("..INKLUDER SOSI_Objekt");
-
-                foreach (var b1 in o.Egenskaper)
+                builder.Append("..AVGRENSES_AV ").Append(string.Join(",", o.AvgrensesAv.ToArray(), 0, o.AvgrensesAv.Count));
+                if (o.Geometrityper.Any())
                 {
-                    builder.Append(LagSosiEgenskap(b1));
+                    var harFlate = o.HarGeometri("FLATE");
+                    builder.AppendLine(harFlate ? ",KantUtsnitt" : string.Empty);
+                    if (harFlate || _datasettErForvaltetMedNgis)
+                    {
+                        builder.Append("..INKLUDER ");
+                        builder.Append(harFlate
+                            ? o.AvgrensesAv.Contains("flateavgrensning")
+                                ? "Flateavgrensning,KantUtsnitt"
+                                : "KantUtsnitt"
+                            : string.Empty);
+                        builder.AppendLine(_datasettErForvaltetMedNgis ? ",Ngis" : string.Empty);
+                    }
                 }
-                builder.Append(LagSosiArvetObjekt(o));
             }
+            if (o.Avgrenser.Count > 0)
+                builder.Append("..AVGRENSER ").AppendLine(string.Join(",", o.Avgrenser.ToArray(), 0, o.Avgrenser.Count));
+
+            builder.Append("..PRODUKTSPEK ").AppendLine(o.Standard.ToUpper());
+
+            if (isFagområde)
+                builder.AppendLine("..INKLUDER SOSI_Objekt");
+
+            foreach (var b1 in o.Egenskaper)
+            {
+                builder.Append(LagSosiEgenskap(b1));
+            }
+            builder.Append(LagSosiArvetObjekt(o));
+        
             return builder.ToString();
         }
 
-       
+        private bool ErForvaltetMedNgis(string kortnavn)
+        {
+            // N5 skal være med, N50, N500 ... skal ikke.
+            return (kortnavn.StartsWith("N5") && !kortnavn.StartsWith("N50")) ||
+                   NgisDatasetShortnames.Any(kortnavn.StartsWith);
+        }
 
         private static string LagSosiArvetObjekt(Objekttype o)
         {

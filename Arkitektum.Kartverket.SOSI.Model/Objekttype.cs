@@ -35,8 +35,6 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
         public string Notat { get; set; }
 
-        public bool ErOpprettetMaskinelt { get; set; }
-
         public Objekttype()
         {
             Egenskaper = new List<AbstraktEgenskap>();
@@ -82,21 +80,6 @@ namespace Arkitektum.Kartverket.SOSI.Model
             //bool harEgenskapSomHeterAvgrensning = Egenskaper.Any(e => e.UML_Navn.ToUpperInvariant().Contains(avgrensning));
 
             return harKurveGeometri;// && (harAvgrensningINavnet || harEgenskapSomHeterAvgrensning);
-        }
-
-        public bool ErFlateavgrensningObjekt()
-        {
-            return SammenlignMedUmlNavn("Flateavgrensning");
-        }
-
-        private bool SammenlignMedUmlNavn(string nameToCompare)
-        {
-            return string.Equals(UML_Navn, nameToCompare, StringComparison.InvariantCultureIgnoreCase);
-        }
-
-        public bool ErKantUtsnittObjekt()
-        {
-            return SammenlignMedUmlNavn("KantUtsnitt");
         }
     }
 }

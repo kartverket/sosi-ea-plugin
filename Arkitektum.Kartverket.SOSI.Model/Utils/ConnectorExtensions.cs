@@ -8,7 +8,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
         public static bool IsTopoType(this Connector connector)
         {
             return connector.Stereotype.Equals("topo", InvariantCultureIgnoreCase) ||
-                   connector.MetaType.Equals("topo", InvariantCultureIgnoreCase);
+                   connector.MetaType.Equals("topo", InvariantCultureIgnoreCase) || 
+                   connector.SupplierEnd.Role.StartsWith("avgrensesAv");
         }
 
         public static bool ErNavigerbar(this Connector connector, bool isSupplierEnd)
