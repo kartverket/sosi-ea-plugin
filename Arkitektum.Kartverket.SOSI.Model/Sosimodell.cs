@@ -284,13 +284,26 @@ namespace Arkitektum.Kartverket.SOSI.Model
             return objekttype;
         }
 
-        private static IEnumerable<string> LagTopoAvgrensninger(Element element, string elementUmlName)
+        private IEnumerable<string> LagTopoAvgrensninger(Element element, string elementUmlName)
         {
             foreach (Constraint constraint in element.Constraints.Cast<Constraint>()
                          .Where(c => c.Name.StartsWith("KanAvgrensesAv")))
             {
+                if (constraint.Name.Length < 15)
+                {
+                    Logg($"Element [{element.Name}] har en uspesifisert topoavgrensning: [{constraint.Name}]");
+                    continue;
+                }
+                    
                 var objectTypeNames = constraint.Name.Remove(0, 15);
-                var objectTypes = objectTypeNames.Split(',');
+                var objectTypes = objectTypeNames.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+                if (!objectTypes.Any())
+                {
+                    Logg($"Element [{element.Name}] har en uspesifisert topoavgrensning: [{constraint.Name}]");
+                    continue;
+                }
+
                 foreach (var objectType in objectTypes)
                 {
                     var trimmedObjectType = objectType.Trim();
