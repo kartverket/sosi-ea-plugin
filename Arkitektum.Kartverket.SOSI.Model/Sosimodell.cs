@@ -314,7 +314,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
             }
         }
 
-        private static IEnumerable<Beskrankning> LagBeskrankninger(Element element)
+        private IEnumerable<Beskrankning> LagBeskrankninger(Element element)
         {
             return from Constraint constraint in element.Constraints select LagBeskrankning(constraint);
         }
@@ -1035,13 +1035,22 @@ namespace Arkitektum.Kartverket.SOSI.Model
             });
         }
 
-        private static Beskrankning LagBeskrankning(Constraint constraint)
+        private Beskrankning LagBeskrankning(Constraint constraint)
         {
             var oclDescription = "";
             if (constraint.Notes.Contains("/*") && constraint.Notes.Contains("*/"))
             {
-                oclDescription = constraint.Notes.Substring(constraint.Notes.ToLower().IndexOf("/*") + 2,
-                    constraint.Notes.ToLower().IndexOf("*/") - 2 - constraint.Notes.ToLower().IndexOf("/*"));
+                var startIndex = constraint.Notes.IndexOf("/*", StringComparison.InvariantCulture) + 2;
+                var stopIndex = constraint.Notes.IndexOf("*/", StringComparison.InvariantCulture) - startIndex;
+
+                if (stopIndex < startIndex || startIndex < 0)
+                {
+                    Logg($"FEIL: Klarte ikke opprette beskrankning fra [{constraint.Notes}]. Teksten er ikke korrekt formatert: /*Beskrankning*/");
+                }
+                else
+                {
+                    oclDescription = constraint.Notes.Substring(startIndex, stopIndex);
+                }
             }
 
             return new Beskrankning
