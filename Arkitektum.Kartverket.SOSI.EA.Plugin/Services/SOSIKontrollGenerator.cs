@@ -32,6 +32,12 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
             string versjonUtenP = "";
             bool fagområde = false;
 
+            var modellHarFlateGeometri = liste.Any(o => o.HarGeometri("FLATE"));
+            var modellAvgrensesAvKantUtsnitt = modellHarFlateGeometri; // Se variabel "harFlate" i metoden "LagSosiObjekt"
+                                                                       // samt https://kartverket.atlassian.net/browse/GEOPORTAL-5528
+                                                                       // Spesifikt "For alle flater skal det være minst ..INKLUDER KantUtsnitt"
+            var modellAvgrensesAvFlateavgrensning = liste.Any(o => o.AvgrensesAv.Contains("Flateavgrensning"));
+
             Package valgtPakke = repository.GetTreeSelectedPackage();
 
             foreach (TaggedValue theTags in valgtPakke.Element.TaggedValues)
@@ -91,9 +97,12 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
                 file.WriteLine("[UtvalgsRegler]");
                 file.WriteLine(utvalgfil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
                 file.WriteLine("");
-                file.WriteLine("[ObjektDefinisjoner]");
-                file.WriteLine(fullfil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
-                file.WriteLine(@"..\std\Objektavgrensning.50"); //todo: bare dersom datasett inneholder flater?
+                if (modellHarFlateGeometri)
+                {
+                    file.WriteLine("[ObjektDefinisjoner]");
+                    file.WriteLine(fullfil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
+                    file.WriteLine($@"..\std\Objektavgrensning.{(sosiVersion == "4.5" ? "45" : "50")}");
+                }
             }
 
             using (var file = new StreamWriter(deffil, false, Encoding.GetEncoding(1252)))
@@ -232,16 +241,25 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
 
                 foreach (Objekttype o in liste)
                 {
-                    file.WriteLine("");
-                    file.WriteLine(".GRUPPE-UTVALG " + o.UML_Navn);
-                    file.WriteLine("..VELG  \"..OBJTYPE\" = " + o.UML_Navn);
-                    file.WriteLine("..BRUK-REGEL " + o.UML_Navn);
-
+                    SkrivGruppeUtvalg(file, o.UML_Navn);
                 }
 
+                if (modellAvgrensesAvKantUtsnitt)
+                    SkrivGruppeUtvalg(file, "KantUtsnitt");
+
+                if (modellAvgrensesAvFlateavgrensning)
+                    SkrivGruppeUtvalg(file, "Flateavgrensning");
             }
 
             Process.Start(baseDirectory);
+        }
+
+        private static void SkrivGruppeUtvalg(StreamWriter file, string objektNavn)
+        {
+            file.WriteLine("");
+            file.WriteLine($".GRUPPE-UTVALG {objektNavn}");
+            file.WriteLine($"..VELG  \"..OBJTYPE\" = {objektNavn}");
+            file.WriteLine($"..BRUK-REGEL {objektNavn}");
         }
 
 
