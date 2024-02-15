@@ -97,10 +97,10 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
                 file.WriteLine("[UtvalgsRegler]");
                 file.WriteLine(utvalgfil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
                 file.WriteLine("");
+                file.WriteLine("[ObjektDefinisjoner]");
+                file.WriteLine(fullfil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
                 if (modellHarFlateGeometri)
                 {
-                    file.WriteLine("[ObjektDefinisjoner]");
-                    file.WriteLine(fullfil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
                     file.WriteLine($@"..\std\Objektavgrensning.{(sosiVersion == "4.5" ? "45" : "50")}");
                 }
             }
