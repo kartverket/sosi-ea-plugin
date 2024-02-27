@@ -73,39 +73,42 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
             //Lage kataloger
             string eadirectory = Path.GetDirectoryName(repository.ConnectionString);
             string baseDirectory = Path.Combine(eadirectory, "def");
-            string fullfil = Path.Combine(baseDirectory, produktgruppe, kortnavn, $"{kortnavn}_o.{versjonUtenP}");
-            string utvalgfil = Path.Combine(baseDirectory, produktgruppe, kortnavn, $"{kortnavn}_u.{versjonUtenP}");
-            string deffil = Path.Combine(baseDirectory, produktgruppe, kortnavn, $"{kortnavn}_d.{versjonUtenP}");
-            string defkatalogfil = Path.Combine(baseDirectory, produktgruppe, $"Def_{kortnavn}.{versjonUtenP}");
+            string fullfilRelativePath = Path.Combine(kortnavn, $"{kortnavn}_o.{versjonUtenP}");
+            string fullfilFullPath = Path.Combine(baseDirectory, produktgruppe, fullfilRelativePath);
+            string utvalgfilRelativePath = Path.Combine(kortnavn, $"{kortnavn}_u.{versjonUtenP}");
+            string utvalgfilFullPath = Path.Combine(baseDirectory, produktgruppe, utvalgfilRelativePath);
+            string deffilRelativePath = Path.Combine(kortnavn, $"{kortnavn}_d.{versjonUtenP}");
+            string deffilFullPath = Path.Combine(baseDirectory, produktgruppe, deffilRelativePath);
+            string defkatalogfilFullPath = Path.Combine(baseDirectory, produktgruppe, $"Def_{kortnavn}.{versjonUtenP}");
 
-            string katalog = Path.GetDirectoryName(fullfil);
+            string katalog = Path.GetDirectoryName(fullfilFullPath);
 
             if (!Directory.Exists(katalog))
             {
                 Directory.CreateDirectory(katalog);
             }
 
-            using (var file = new StreamWriter(defkatalogfil, false, Encoding.GetEncoding(1252)))
+            using (var file = new StreamWriter(defkatalogfilFullPath, false, Encoding.GetEncoding(1252)))
             {
                 file.WriteLine("[SyntaksDefinisjoner]");
-                file.WriteLine(deffil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
+                file.WriteLine(deffilRelativePath);
                 file.WriteLine($@"..\std\SOSISTD.{(sosiVersion == "4.5" ? "451" : "50")}");
                 file.WriteLine("");
                 file.WriteLine("[KodeForklaringer]");
                 file.WriteLine($@"..\std\KODER.{(sosiVersion == "4.5" ? "45" : "50")}");
                 file.WriteLine("");
                 file.WriteLine("[UtvalgsRegler]");
-                file.WriteLine(utvalgfil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
+                file.WriteLine(utvalgfilRelativePath);
                 file.WriteLine("");
                 file.WriteLine("[ObjektDefinisjoner]");
-                file.WriteLine(fullfil.Replace(eadirectory + @"\def\" + produktgruppe + @"\", ""));
+                file.WriteLine(fullfilRelativePath);
                 if (modellHarFlateGeometri)
                 {
                     file.WriteLine($@"..\std\Objektavgrensning.{(sosiVersion == "4.5" ? "45" : "50")}");
                 }
             }
 
-            using (var file = new StreamWriter(deffil, false, Encoding.GetEncoding(1252)))
+            using (var file = new StreamWriter(deffilFullPath, false, Encoding.GetEncoding(1252)))
             {
                 List<Basiselement> listUnikeBasiselementer = new List<Basiselement>();
                 List<Gruppeelement> listUnikeGruppeelementer = new List<Gruppeelement>();
@@ -196,7 +199,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
                 */
             }
 
-            using (var file = new StreamWriter(fullfil, false, Encoding.GetEncoding(1252)))
+            using (var file = new StreamWriter(fullfilFullPath, false, Encoding.GetEncoding(1252)))
             {
 
                 file.WriteLine("! ***************************************************************************!");
@@ -222,7 +225,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
 
             }
 
-            using (StreamWriter file = new StreamWriter(utvalgfil, false, Encoding.GetEncoding(1252)))
+            using (StreamWriter file = new StreamWriter(utvalgfilFullPath, false, Encoding.GetEncoding(1252)))
             {
 
                 file.WriteLine("! ***************************************************************************!");
