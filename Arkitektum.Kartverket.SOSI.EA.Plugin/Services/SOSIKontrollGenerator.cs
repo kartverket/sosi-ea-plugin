@@ -390,7 +390,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
 
         private bool ErForvaltetMedNgis(string kortnavn)
         {
-            // N5 skal være med, N50, N500 ... skal ikke.
+            // N5 skal være med. N50, N500 ... skal ikke.
             return (kortnavn.StartsWith("N5") && !kortnavn.StartsWith("N50")) ||
                    NgisDatasetShortnames.Any(kortnavn.StartsWith);
         }
