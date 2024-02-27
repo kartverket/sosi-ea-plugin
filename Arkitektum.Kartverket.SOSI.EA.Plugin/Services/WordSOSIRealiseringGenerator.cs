@@ -1,19 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Emit;
 using System.Text;
 using System.Windows.Forms;
-using Office = Microsoft.Office.Core;
 using Word = Microsoft.Office.Interop.Word;
 using Arkitektum.Kartverket.SOSI.Model;
+using EA;
 
 namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
 {
     public class WordSOSIRealiseringGenerator
     {
-        public void LagWordRapportSosiSyntaks(List<Objekttype> otList, bool isFag, IEnumerable<SosiKodeliste> kodeList, string pakke)
+        public void LagWordRapportSosiSyntaks(Sosimodell sosimodell, bool isFag, Package pakke)
         {
+            var otList = sosimodell.ByggObjektstruktur();
+            var kodeList = Sosimodell.ByggSosiKodelister(pakke);
+            var pakkenavn = pakke.Name;
+
+            if (sosimodell.HarFlateavgrensning())
+                otList.Add(sosimodell.LagFlateavgrensning());
+            
+            if (sosimodell.HarKantutsnitt())
+                otList.Add(sosimodell.LagKantUtsnitt());
 
             try
             {
@@ -28,8 +36,8 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
                 oWord.Visible = false;
 
                 int I0 = oDoc.Paragraphs.Count;
-                if (isFag) oDoc.Paragraphs[I0].Range.InsertAfter("Fagområde: " + pakke);
-                else oDoc.Paragraphs[I0].Range.InsertAfter("Produktspesifikasjon: " + pakke);
+                if (isFag) oDoc.Paragraphs[I0].Range.InsertAfter("Fagområde: " + pakkenavn);
+                else oDoc.Paragraphs[I0].Range.InsertAfter("Produktspesifikasjon: " + pakkenavn);
                 Object styleHeading2 = Word.WdBuiltinStyle.wdStyleHeading2;
                 Object styleHeading3 = Word.WdBuiltinStyle.wdStyleHeading3;
 

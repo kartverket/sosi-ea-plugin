@@ -269,12 +269,9 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin
                     }
 
                     Sosimodell modell = new Sosimodell(Repository);
-                    List<Objekttype> otList = modell.ByggObjektstruktur();
-                    IEnumerable<SosiKodeliste> kodeList = Sosimodell.ByggSosiKodelister(valgtPakke);
-                    string eadirectory = Path.GetDirectoryName(Repository.ConnectionString);
                     
                     var gen = new WordSOSIRealiseringGenerator();
-                    gen.LagWordRapportSosiSyntaks(otList, isFag, kodeList, valgtPakke.Name);
+                    gen.LagWordRapportSosiSyntaks(modell, isFag, valgtPakke);
 
                 }
                 else MessageBox.Show("Vennligst velg en pakke med stereotype applicationSchema.");
