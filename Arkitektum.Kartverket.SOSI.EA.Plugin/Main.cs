@@ -270,7 +270,7 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin
 
                     Sosimodell modell = new Sosimodell(Repository);
                     
-                    var gen = new WordSOSIRealiseringGenerator();
+                    var gen = new WordSOSIRealiseringGenerator(Repository);
                     gen.LagWordRapportSosiSyntaks(modell, isFag, valgtPakke);
 
                 }
