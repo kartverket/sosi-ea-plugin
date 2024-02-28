@@ -8,6 +8,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>SOSI.EA.Plugin.Setup.x64</OutputName>
     <OutputType>Package</OutputType>
+    <Name>SOSI.EA.Plugin.Setup</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Platform)' == 'x86'">
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -17,6 +18,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>SOSI.EA.Plugin.Setup.x64</OutputName>
     <OutputType>Package</OutputType>
+    <Name>SOSI.EA.Plugin.Setup</Name>
   </PropertyGroup>
   <PropertyGroup>
     <OutputPath>bin\$(Configuration)\$(Platform)\</OutputPath>
