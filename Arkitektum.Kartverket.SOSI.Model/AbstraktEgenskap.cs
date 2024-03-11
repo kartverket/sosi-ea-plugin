@@ -29,5 +29,14 @@ namespace Arkitektum.Kartverket.SOSI.Model
             Multiplisitet = Multiplisitet.Replace("[1..]", "[1..*]");
             Multiplisitet = Multiplisitet.Replace("[1]", "[1..1]");
         }
+
+        public bool ErAssosiasjonSomBeskriverAvgrensning()
+        {
+            if (string.IsNullOrEmpty(UML_Navn))
+                return false;
+
+            return UML_Navn.StartsWith("avgrensesav", StringComparison.OrdinalIgnoreCase) &&
+                   UML_Navn.EndsWith("(rolle)", StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

@@ -1,4 +1,4 @@
-using EA;
+﻿using EA;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -414,6 +414,9 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
 
         private static string LagSosiEgenskap(AbstraktEgenskap sosiEgenskap)
         {
+            if (sosiEgenskap.ErAssosiasjonSomBeskriverAvgrensning())
+                return string.Empty;
+
             StringBuilder builder = new StringBuilder();
             var basiselement = sosiEgenskap as Basiselement;
             if (basiselement != null)

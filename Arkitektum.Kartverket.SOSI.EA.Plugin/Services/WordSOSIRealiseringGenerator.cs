@@ -162,6 +162,9 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
 
         private void PrintWordTableEgenskap(XWPFTable table, AbstraktEgenskap element, bool isFag)
         {
+            if (element.ErAssosiasjonSomBeskriverAvgrensning())
+                return;
+
             if (element is Basiselement basiselement)
             {
                 PrintWordTableBasiselement(table, basiselement, isFag);
