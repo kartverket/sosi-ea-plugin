@@ -1,4 +1,4 @@
-﻿using EA;
+using EA;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -363,11 +363,11 @@ namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
                     {
                         builder.Append("..INKLUDER ");
                         builder.Append(harFlate
-                            ? o.AvgrensesAv.Contains("flateavgrensning")
-                                ? "Flateavgrensning,KantUtsnitt"
+                            ? o.AvgrensesAv.Contains("flateavgrensning", StringComparer.OrdinalIgnoreCase)
+                                ? "Flateavgrensning KantUtsnitt"
                                 : "KantUtsnitt"
                             : string.Empty);
-                        builder.AppendLine(_datasettErForvaltetMedNgis ? ",Ngis" : string.Empty);
+                        builder.AppendLine(_datasettErForvaltetMedNgis ? " Ngis" : string.Empty);
                     }
                 }
             }
