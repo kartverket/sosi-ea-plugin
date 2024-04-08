@@ -7,7 +7,7 @@
 				             Key="Software">
 					<RegistryKey Key="Sparx Systems">
 						<RegistryKey Key="EAAddins64">
-							<RegistryKey Key="ShapeChange">
+							<RegistryKey Key="SOSI plugin">
 								<RegistryValue Type="string" Value="Arkitektum.Kartverket.SOSI.EA.Plugin.Main" KeyPath="yes"/>
 							</RegistryKey>
 						</RegistryKey>
