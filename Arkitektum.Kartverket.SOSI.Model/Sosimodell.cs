@@ -9,14 +9,24 @@ namespace Arkitektum.Kartverket.SOSI.Model
     public class Sosimodell
     {
         private readonly Repository _repository;
+        private Package _valgtPakke;
+        private string _standard;
 
         private List<Objekttype> _objekttyper;
 
         private static Dictionary<string, HashSet<string>> _topoAvgrensningerLagtTilFraUmlConstraints;
 
+        public bool HarFlateavgrensning() => _objekttyper.Any(o => o.AvgrensesAv.Contains("Flateavgrensning"));
+        public bool HarFlateGeometri() => _objekttyper.Any(o => o.HarGeometri("flate"));
+        public bool HarKantutsnitt() => HarFlateGeometri();
+
+        
+
         public Sosimodell(Repository repository)
         {
             this._repository = repository;
+            _valgtPakke = _repository.GetTreeSelectedPackage();
+            _standard = HentApplicationSchemaPakkeNavn(_valgtPakke.Element);
         }
 
         public List<Objekttype> ByggObjektstruktur()
@@ -24,9 +34,7 @@ namespace Arkitektum.Kartverket.SOSI.Model
             _objekttyper = new List<Objekttype>();
             _topoAvgrensningerLagtTilFraUmlConstraints = new Dictionary<string, HashSet<string>>();
 
-            Package valgtPakke = _repository.GetTreeSelectedPackage();
-
-            _objekttyper = LagObjekttyperForElementerIPakke(valgtPakke);
+            _objekttyper = LagObjekttyperForElementerIPakke(_valgtPakke);
 
             LeggTilFlateavgrensningForFlaterSomManglerAvgrensning(_objekttyper);
 
@@ -37,8 +45,6 @@ namespace Arkitektum.Kartverket.SOSI.Model
 
         private void LeggTilFlateavgrensningForFlaterSomManglerAvgrensning(List<Objekttype> objekttyper)
         {
-            var flaterSomManglerFlateavgrensning = objekttyper.Where(o => o.HarGeometri("flate") && o.AvgrensesAv.Count == 0).ToList();
-
             foreach (Objekttype objekttype in objekttyper)
             {
                 if (objekttype.HarGeometri("flate"))
@@ -60,6 +66,8 @@ namespace Arkitektum.Kartverket.SOSI.Model
                     }
                 }
             }
+
+            var flaterSomManglerFlateavgrensning = objekttyper.Where(o => o.HarGeometri("flate") && o.AvgrensesAv.Count == 0).ToList();
 
             foreach (var objekttype in flaterSomManglerFlateavgrensning)
             {
@@ -282,6 +290,68 @@ namespace Arkitektum.Kartverket.SOSI.Model
             }
 
             return objekttype;
+        }
+
+        public Objekttype LagFlateavgrensning()
+        {
+            var navnPaaFlaterSomManglerFlateavgrensning = _objekttyper
+                .Where(o => o.AvgrensesAv.Contains("Flateavgrensning")).Select(o => o.UML_Navn);
+
+            return new Objekttype
+            {
+                UML_Navn = "Flateavgrensning",
+                Geometrityper = new List<string> { "KURVE" },
+                Standard = _standard,
+                Egenskaper = new List<AbstraktEgenskap>
+                {
+                    new Basiselement
+                    {
+                        SOSI_Navn = "..OBJTYPE",
+                        Operator = "=",
+                        TillatteVerdier = new List<string> {"Flateavgrensning"},
+                        Multiplisitet = "[1..1]",
+                        Datatype = "T18",
+                    }
+                },
+                OCLconstraints =
+                {
+                    new Beskrankning
+                    {
+                        Navn = "Flateavgrensning",
+                        Notat = "Objekttypen er lagt til for å avgrense flaten for å tilfredsstille geometrimodellen i SOSI-formatet."
+                    }
+                },
+                Avgrenser = navnPaaFlaterSomManglerFlateavgrensning.ToList(),
+            };
+        }
+
+        public Objekttype LagKantUtsnitt()
+        {
+            return new Objekttype
+            {
+                UML_Navn = "KantUtsnitt",
+                Geometrityper = new List<string> { "KURVE" },
+                Standard = _standard,
+                Egenskaper = new List<AbstraktEgenskap>
+                {
+                    new Basiselement
+                    {
+                        SOSI_Navn = "..OBJTYPE",
+                        Operator = "=",
+                        TillatteVerdier = new List<string> {"KantUtsnitt"},
+                        Multiplisitet = "[1..1]",
+                        Datatype = "T12",
+                    }
+                },
+                OCLconstraints =
+                {
+                    new Beskrankning
+                    {
+                        Navn = "KantUtsnitt",
+                        Notat = "Objekttypen kan forekomme som et resultat av klipping av datasettet."
+                    }
+                }
+            };
         }
 
         private IEnumerable<string> LagTopoAvgrensninger(Element element, string elementUmlName)

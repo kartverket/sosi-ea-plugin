@@ -188,3 +188,7 @@ UpgradeLog*.htm
 # Microsoft Fakes
 FakesAssemblies/
 </pre></body></html>
+
+SOSI.EA.Plugin.Setup/SosiPlugin.wxs
+
+SOSI.EA.Plugin.Setup/RegistryEntries.wxs

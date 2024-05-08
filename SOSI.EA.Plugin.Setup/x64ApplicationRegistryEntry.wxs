@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Fragment>
+		<DirectoryRef Id="TARGETDIR">
+			<Component Id="AppRegistryEntry" Guid="2A343A56-2DE9-476F-93C2-07D39717408E">
+				<RegistryKey Root="HKCU"
+				             Key="Software">
+					<RegistryKey Key="Sparx Systems">
+						<RegistryKey Key="EAAddins64">
+							<RegistryKey Key="SOSI plugin">
+								<RegistryValue Type="string" Value="Arkitektum.Kartverket.SOSI.EA.Plugin.Main" KeyPath="yes"/>
+							</RegistryKey>
+						</RegistryKey>
+					</RegistryKey>
+				</RegistryKey>
+			</Component>
+		</DirectoryRef>
+	</Fragment>
+</Wix>
