@@ -1,400 +1,391 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Reflection.Emit;
 using System.Text;
 using System.Windows.Forms;
-using Office = Microsoft.Office.Core;
-using Word = Microsoft.Office.Interop.Word;
 using Arkitektum.Kartverket.SOSI.Model;
+using EA;
+using NPOI.XWPF.UserModel;
+using NPOI.OpenXmlFormats.Wordprocessing;
 
 namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Services
 {
     public class WordSOSIRealiseringGenerator
     {
-        public void LagWordRapportSosiSyntaks(List<Objekttype> otList, bool isFag, IEnumerable<SosiKodeliste> kodeList, string pakke)
+        private readonly string _eaModelDirectory;
+        private int _noOfColumns;
+
+        public WordSOSIRealiseringGenerator(Repository repository)
         {
+            _eaModelDirectory = Path.GetDirectoryName(repository.ConnectionString);
+        }
+
+        public void LagWordRapportSosiSyntaks(Sosimodell sosimodell, bool isFag, Package pakke)
+        {
+            var otList = sosimodell.ByggObjektstruktur();
+            var kodelister = Sosimodell.ByggSosiKodelister(pakke);
+            var pakkenavn = pakke.Name;
+
+            if (sosimodell.HarFlateavgrensning())
+                otList.Add(sosimodell.LagFlateavgrensning());
+            
+            if (sosimodell.HarKantutsnitt())
+                otList.Add(sosimodell.LagKantUtsnitt());
+
+            _noOfColumns = isFag ? 6 : 5;
 
             try
             {
-               
-                Word.Application oWord = new Word.Application();
+                var directoryPath = Path.Combine(_eaModelDirectory, "Produktspesifikasjoner");
+                Directory.CreateDirectory(directoryPath);
 
-                Word.Document oDoc = oWord.Documents.Add();
-                //oDoc.ActiveWindow.View.Type = Word.WdViewType.wdNormalView;
-                //oWord.Options.Pagination = false;
-                oWord.ScreenUpdating = false;
-
-                oWord.Visible = false;
-
-                int I0 = oDoc.Paragraphs.Count;
-                if (isFag) oDoc.Paragraphs[I0].Range.InsertAfter("Fagområde: " + pakke);
-                else oDoc.Paragraphs[I0].Range.InsertAfter("Produktspesifikasjon: " + pakke);
-                Object styleHeading2 = Word.WdBuiltinStyle.wdStyleHeading2;
-                Object styleHeading3 = Word.WdBuiltinStyle.wdStyleHeading3;
-
-                oDoc.Paragraphs[I0].Format.set_Style(ref styleHeading2);
-                oDoc.Paragraphs[I0].Range.InsertParagraphAfter();
-
-                Object oMissing = System.Reflection.Missing.Value;
-
-                if (otList.Count > 0)
+                var fullFilePath = Path.Combine(directoryPath, "Produktspesifikasjon_" + pakkenavn + ".docx");
+                using (var fs = new FileStream(fullFilePath, FileMode.Create, FileAccess.Write))
                 {
-                    int I1 = oDoc.Paragraphs.Count;
-                    oDoc.Paragraphs[I1].Range.InsertAfter("Objekttyper");
-                    oDoc.Paragraphs[I1].Format.set_Style(ref styleHeading3);
-                    oDoc.Paragraphs[I1].Range.InsertParagraphAfter();
+                    var doc = new XWPFDocument();
+
+                    CreateTitle(doc, isFag, pakkenavn);
+
+                    if (otList.Count > 0)
+                        CreateHeading3(doc, "Objekttyper");
+
+                    foreach (var objekttype in otList)
+                        CreateObjekttypeTable(doc, objekttype, isFag);
+
+                    if (kodelister.Any())
+                        CreateHeading3(doc, "Kodelister");
+
+                    foreach (var kodeliste in kodelister)
+                        CreateKodelisteTable(doc, kodeliste);
+
+                    doc.Write(fs);
                 }
 
-                foreach (Objekttype o in otList)
-                {
-                    //Overskrift
-                    int I1 = oDoc.Paragraphs.Count;
-                    oDoc.Paragraphs[I1].Range.InsertAfter(o.UML_Navn);
-                    Object styleHeading4 = Word.WdBuiltinStyle.wdStyleHeading4;
-                    oDoc.Paragraphs[I1].Format.set_Style(ref styleHeading4);
-                    oDoc.Paragraphs[I1].Range.InsertParagraphAfter();
-
-                    int I3 = oDoc.Words.Count;
-                    oDoc.Words[I3].Select();
-                    Word.Table oTable;
-                    if (isFag)
-                    {
-                        oTable = oDoc.Tables.Add(oDoc.Content.Application.Selection.Range, 1, 6);
-                        oTable.Columns[1].Width = 110;
-                        
-                        oTable.Columns[2].Width = 110;
-                        
-                        oTable.Columns[3].Width = 110;
-                       
-                        oTable.Columns[4].Width = 40;
-                       
-                        oTable.Columns[5].Width = 40;
-                        
-                        oTable.Columns[6].Width = 100;
-                    }
-                    else
-                    {
-                        oTable = oDoc.Tables.Add(oDoc.Content.Application.Selection.Range, 1, 5);
-                        oTable.Columns[1].Width = 140;
-                        
-                        oTable.Columns[2].Width = 140;
-                        
-                        oTable.Columns[3].Width = 130;
-                        
-                        oTable.Columns[4].Width = 50;
-                        
-                        oTable.Columns[5].Width = 50;
-                        
-
-                    }
-
-                    oTable.Borders.OutsideColor = Word.WdColor.wdColorBlack;
-                    oTable.Borders.OutsideLineStyle = Word.WdLineStyle.wdLineStyleSingle;
-                    oTable.Borders.InsideColor = Word.WdColor.wdColorBlack;
-                    oTable.Borders.InsideLineStyle = Word.WdLineStyle.wdLineStyleSingle;
-
-                    oTable.Cell(1, 1).Range.Text = "UML Egenskapsnavn";
-                    oTable.Cell(1, 1).Range.Bold = 1;
-                    oTable.Cell(1, 1).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorGray05;
-
-                    oTable.Cell(1, 2).Range.Text = "SOSI Egenskapsnavn";
-                    oTable.Cell(1, 2).Range.Bold = 1;
-                    oTable.Cell(1, 2).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorGray05;
-                    oTable.Cell(1, 3).Range.Text = "Tillatte verdier";
-                    oTable.Cell(1, 3).Range.Bold = 1;
-                    oTable.Cell(1, 3).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorGray05;
-                   
-                    oTable.Cell(1, 4).Range.Text = "Mult";
-                    oTable.Cell(1, 4).Range.Bold = 1;
-                    oTable.Cell(1, 4).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorGray05;
-                    oTable.Cell(1, 5).Range.Text = "SOSI-type";
-                    oTable.Cell(1, 5).Range.Bold = 1;
-                    oTable.Cell(1, 5).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorGray05;
-                    //Hvis det er fagområde så er denne aktuell, ikke på produktspek.
-                    if (isFag)
-                    {
-                        oTable.Cell(1, 6).Range.Text = "Standard";
-                        oTable.Cell(1, 6).Range.Bold = 1;
-                        oTable.Cell(1, 6).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorGray05;
-                    }
-
-                    if (o.Geometrityper.Count > 0) PrintWordTableGeometri(oTable, o.Geometrityper, isFag);
-
-                    foreach (AbstraktEgenskap b in o.Egenskaper)
-                    {
-                        PrintWordTableEgenskap(oTable, b, isFag);
-
-                    }
-
-                    if (o.Inkluder != null)
-                    {
-                        PrintWordTableArvetObjekt(oTable, o, isFag);
-                    }
-
-                    if (o.OCLconstraints.Count > 0 || o.Avgrenser.Count > 0 || o.AvgrensesAv.Count > 0)
-                    {
-                        
-                        oTable.Rows.Add();
-                        int rowcounter2 = oTable.Rows.Count;
-                        oTable.Rows[rowcounter2].Cells.Merge();
-                        oTable.Cell(rowcounter2, 1).Range.Text = "Restriksjoner";
-                        oTable.Cell(rowcounter2, 1).Range.Bold = 1;
-                        oTable.Cell(rowcounter2, 1).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorGray05;
-                        
-
-                        if (o.Avgrenser.Count > 0)
-                        {
-                            oTable.Rows.Add();
-                            int rowcounter = oTable.Rows.Count;
-                            oTable.Cell(rowcounter, 1).Range.Text = "Avgrenser: " + String.Join(", ", o.Avgrenser.ToArray(), 0, o.Avgrenser.Count);
-                            oTable.Cell(rowcounter, 1).Range.Bold = 0;
-                            oTable.Cell(rowcounter, 1).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
- 
-                        }
-                        if (o.AvgrensesAv.Count > 0)
-                        {
-                            oTable.Rows.Add();
-                            int rowcounter = oTable.Rows.Count;
-                            oTable.Cell(rowcounter, 1).Range.Text = "Avgrenses av: " + String.Join(", ", o.AvgrensesAv.ToArray(), 0, o.AvgrensesAv.Count);
-                            oTable.Cell(rowcounter, 1).Range.Bold = 0;
-                            oTable.Cell(rowcounter, 1).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-                        }
-
-                        foreach (Beskrankning b in o.OCLconstraints)
-                        {
-                            oTable.Rows.Add();
-                            int rowcounter = oTable.Rows.Count;
-
-                            StringBuilder builder = new StringBuilder();
-                            if (b.ErArvet())
-                            {
-                                builder.Append("Fra supertype ").Append(b.OpprinneligFraElementNavn).AppendLine(":");
-                            }
-                            builder.Append(b.Navn).Append(": ").Append(b.Notat);
-                            
-                            oTable.Cell(rowcounter, 1).Range.Text = builder.ToString();
-                            oTable.Cell(rowcounter, 1).Range.Bold = 0;
-                            oTable.Cell(rowcounter, 1).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-                        }
-                       
-                    }
-                }
-
-                if (kodeList.Any())
-                {
-                    int I1 = oDoc.Paragraphs.Count;
-                    oDoc.Paragraphs[I1].Range.InsertAfter("Kodelister");
-                    oDoc.Paragraphs[I1].Format.set_Style(ref styleHeading3);
-                    oDoc.Paragraphs[I1].Range.InsertParagraphAfter();
-                }
-
-                foreach (SosiKodeliste k in kodeList)
-                {
-                    //Overskrift
-                    int I1 = oDoc.Paragraphs.Count;
-                    oDoc.Paragraphs[I1].Range.InsertAfter(k.Navn);
-                    Object styleHeading4 = Word.WdBuiltinStyle.wdStyleHeading4;
-                    oDoc.Paragraphs[I1].Format.set_Style(ref styleHeading4);
-                    oDoc.Paragraphs[I1].Range.InsertParagraphAfter();
-
-                   
-
-                    int I3 = oDoc.Words.Count;
-                    oDoc.Words[I3].Select();
-                    Word.Table oTable;
-                    oTable = oDoc.Tables.Add(oDoc.Content.Application.Selection.Range, 1, 3);
-                    oTable.Borders.OutsideColor = Word.WdColor.wdColorBlack;
-                    oTable.Borders.OutsideLineStyle = Word.WdLineStyle.wdLineStyleSingle;
-                    oTable.Borders.InsideColor = Word.WdColor.wdColorBlack;
-                    oTable.Borders.InsideLineStyle = Word.WdLineStyle.wdLineStyleSingle;
-                    oTable.Columns[1].Width = 100;
-                    oTable.Columns[2].Width = 110;
-                    oTable.Columns[3].Width = 300;
-                    
-                    oTable.Cell(1, 1).Range.Text = "Kode";
-                    oTable.Cell(1, 1).Range.Bold = 1;
-                    oTable.Cell(1, 1).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorGray05;
-                    oTable.Cell(1, 2).Range.Text = "Navn";
-                    oTable.Cell(1, 2).Range.Bold = 1;
-                    oTable.Cell(1, 2).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorGray05;
-                    oTable.Cell(1, 3).Range.Text = "Beskrivelse";
-                    oTable.Cell(1, 3).Range.Bold = 1;
-                    oTable.Cell(1, 3).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorGray05;
-
-                    foreach (SosiKode o in k.Verdier)
-                    {
-                        oTable.Rows.Add();
-                        int rowcounter = oTable.Rows.Count;
-                        oTable.Cell(rowcounter, 1).Range.Text = o.SosiVerdi;
-                        oTable.Cell(rowcounter, 2).Range.Text = o.Navn;
-                        oTable.Cell(rowcounter, 1).Range.Bold = 0;
-                        oTable.Cell(rowcounter, 1).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-                        oTable.Cell(rowcounter, 2).Range.Bold = 0;
-                        oTable.Cell(rowcounter, 2).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-                        oTable.Cell(rowcounter, 3).Range.Text = o.Beskrivelse;
-                        oTable.Cell(rowcounter, 3).Range.Bold = 0;
-                        oTable.Cell(rowcounter, 3).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-                    }
-
-                }
-                oWord.ScreenUpdating = true;
-                oWord.Visible = true;
-
+                Process.Start(directoryPath);
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message + " " + e.Source);
+                MessageBox.Show($"{e.Message} {e.Source}");
             }
-
         }
 
-        private void PrintWordTableEgenskap(Word.Table oTable, AbstraktEgenskap b1, bool isFag)
+        // Objekttype
+        private void CreateObjekttypeTable(XWPFDocument doc, Objekttype objekttype, bool isFag)
         {
-            if (b1 is Basiselement)
+            CreateTableHeading(doc, objekttype.UML_Navn);
+
+            var table = doc.CreateTable(1, _noOfColumns);
+
+            SetObjekttypeTableLayout(table, isFag);
+
+            CreateObjekttypeTableHeader(table, isFag);
+
+            if (objekttype.Geometrityper.Count > 0)
+                PrintWordTableGeometri(table, objekttype.Geometrityper);
+
+            foreach (var property in objekttype.Egenskaper)
+                PrintWordTableEgenskap(table, property, isFag);
+
+            if (objekttype.Inkluder != null)
+                PrintWordTableArvetObjekt(table, objekttype, isFag);
+
+            if (objekttype.OCLconstraints.Count > 0 || objekttype.Avgrenser.Count > 0 || objekttype.AvgrensesAv.Count > 0)
             {
-                Basiselement b = (Basiselement)b1;
-                PrintWordTableBasiselement(oTable, b, isFag);
+                var constraintsHeaderRow = table.CreateRow();
+                InsertHeaderCell(constraintsHeaderRow.GetCell(0), "Restriksjoner");
+                constraintsHeaderRow.MergeCells(0, _noOfColumns - 1);
+
+                if (objekttype.Avgrenser.Count > 0)
+                {
+                    var row = table.CreateRow();
+                    InsertValueCell(row.GetCell(0), "Avgrenser: " + string.Join(", ", objekttype.Avgrenser));
+                    row.MergeCells(0, _noOfColumns - 1);
+                }
+                if (objekttype.AvgrensesAv.Count > 0)
+                {
+                    var row = table.CreateRow();
+                    InsertValueCell(row.GetCell(0), "Avgrenses av: " + string.Join(", ", objekttype.AvgrensesAv));
+                    row.MergeCells(0, _noOfColumns - 1);
+                }
+
+                foreach (var beskrankning in objekttype.OCLconstraints)
+                {
+                    var row = table.CreateRow();
+                    
+                    var builder = new StringBuilder();
+                    if (beskrankning.ErArvet())
+                    {
+                        builder.Append("Fra supertype ").Append(beskrankning.OpprinneligFraElementNavn).AppendLine(":");
+                    }
+                    builder.Append(beskrankning.Navn).Append(": ").Append(beskrankning.Notat);
+
+                    InsertValueCell(row.GetCell(0), builder.ToString());
+                    row.MergeCells(0, _noOfColumns - 1);
+                }
+            }
+        }
+
+        private static void SetObjekttypeTableLayout(XWPFTable table, bool isFag)
+        {
+            SetTableLayout(table);
+
+            if (isFag)
+            {
+                table.SetColumnWidth(0, 1220);
+                table.SetColumnWidth(1, 1220);
+                table.SetColumnWidth(2, 1220);
+                table.SetColumnWidth(3, 420);
+                table.SetColumnWidth(4, 420);
+                table.SetColumnWidth(5, 1100);
             }
             else
             {
-                Gruppeelement g = (Gruppeelement)b1;
-                PrintWordTableGruppeelement(oTable, g, isFag);
+                table.SetColumnWidth(0, 1540);
+                table.SetColumnWidth(1, 1540);
+                table.SetColumnWidth(2, 1426);
+                table.SetColumnWidth(3, 547);
+                table.SetColumnWidth(4, 547);
+            }
+        }
 
-                foreach (var b2 in g.Egenskaper)
+        private static void CreateObjekttypeTableHeader(XWPFTable table, bool isFag)
+        {
+            InsertHeaderCell(table.GetRow(0).GetCell(0), "UML Egenskapsnavn");
+            InsertHeaderCell(table.GetRow(0).GetCell(1), "SOSI Egenskapsnavn");
+            InsertHeaderCell(table.GetRow(0).GetCell(2), "Tillatte verdier");
+            InsertHeaderCell(table.GetRow(0).GetCell(3), "Mult");
+            InsertHeaderCell(table.GetRow(0).GetCell(4), "SOSI-", "type");
+            if (isFag) InsertHeaderCell(table.GetRow(0).GetCell(5), "Standard");
+        }
+
+        private void PrintWordTableEgenskap(XWPFTable table, AbstraktEgenskap element, bool isFag)
+        {
+            if (element.ErAssosiasjonSomBeskriverAvgrensning())
+                return;
+
+            if (element is Basiselement basiselement)
+            {
+                PrintWordTableBasiselement(table, basiselement, isFag);
+            }
+            else
+            {
+                var gruppeelement = (Gruppeelement)element;
+
+                PrintWordTableGruppeelement(table, gruppeelement, isFag);
+
+                foreach (var property in gruppeelement.Egenskaper)
                 {
-                    PrintWordTableEgenskap(oTable, b2, isFag);
+                    PrintWordTableEgenskap(table, property, isFag);
                 }
-                if (g.Inkluder != null)
+                if (gruppeelement.Inkluder != null)
                 {
-                    PrintWordTableArvetGruppeelement(oTable, g, isFag);
+                    PrintWordTableArvetGruppeelement(table, gruppeelement, isFag);
                 }
             }
         }
-        private void PrintWordTableArvetGruppeelement(Word.Table oTable, Gruppeelement o, bool isFag)
+
+        private void PrintWordTableArvetGruppeelement(XWPFTable table, Gruppeelement gruppeelement, bool isFag)
         {
-            if (o.Inkluder != null)
+            if (gruppeelement.Inkluder != null)
             {
 
-                foreach (var b1 in o.Inkluder.Egenskaper)
+                foreach (var property in gruppeelement.Inkluder.Egenskaper)
                 {
-                    PrintWordTableEgenskap(oTable, b1, isFag);
+                    PrintWordTableEgenskap(table, property, isFag);
                 }
 
-                if (o.Inkluder.Inkluder != null) PrintWordTableArvetGruppeelement(oTable, o.Inkluder, isFag);
+                if (gruppeelement.Inkluder.Inkluder != null)
+                    PrintWordTableArvetGruppeelement(table, gruppeelement.Inkluder, isFag);
             }
         }
 
-        private void PrintWordTableArvetObjekt(Word.Table oTable, Objekttype o, bool isFag)
+        private void PrintWordTableArvetObjekt(XWPFTable table, Objekttype objekttype, bool isFag)
         {
-            if (o.Inkluder != null)
+            if (objekttype.Inkluder != null)
             {
 
-                foreach (var b1 in o.Inkluder.Egenskaper)
+                foreach (var property in objekttype.Inkluder.Egenskaper)
                 {
-                    PrintWordTableEgenskap(oTable, b1, isFag);
+                    PrintWordTableEgenskap(table, property, isFag);
                 }
 
-                if (o.Inkluder.Inkluder != null) PrintWordTableArvetObjekt(oTable, o.Inkluder, isFag);
+                if (objekttype.Inkluder.Inkluder != null) 
+                    PrintWordTableArvetObjekt(table, objekttype.Inkluder, isFag);
             }
         }
-
-        private static void PrintWordTableGruppeelement(Word.Table oTable, Gruppeelement g, bool isFag)
+        
+        private static void PrintWordTableGruppeelement(XWPFTable table, Gruppeelement g, bool isFag)
         {
-            oTable.Rows.Add();
-            int rowcounter = oTable.Rows.Count;
-            oTable.Cell(rowcounter, 1).Range.Text = g.UML_Navn;
-            oTable.Cell(rowcounter, 1).Range.Bold = 0;
-            oTable.Cell(rowcounter, 1).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            oTable.Cell(rowcounter, 2).Range.Text = g.SOSI_Navn;
-            oTable.Cell(rowcounter, 2).Range.Bold = 0;
-            oTable.Cell(rowcounter, 2).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            oTable.Cell(rowcounter, 3).Range.Text = "*";
-            oTable.Cell(rowcounter, 3).Range.Bold = 0;
-            oTable.Cell(rowcounter, 3).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
+            var row = table.CreateRow();
             
-            oTable.Cell(rowcounter, 4).Range.Text = g.Multiplisitet;
-            oTable.Cell(rowcounter, 4).Range.Bold = 0;
-            oTable.Cell(rowcounter, 4).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            oTable.Cell(rowcounter, 5).Range.Text = "*";
-            oTable.Cell(rowcounter, 5).Range.Bold = 0;
-            oTable.Cell(rowcounter, 5).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
+            InsertValueCell(row.GetCell(0), g.UML_Navn);
+            InsertValueCell(row.GetCell(1), g.SOSI_Navn);
+            InsertValueCell(row.GetCell(2), "*");
+            InsertValueCell(row.GetCell(3), g.Multiplisitet);
+            InsertValueCell(row.GetCell(4), "*");
+            
             if (isFag)
-            {
-                oTable.Cell(rowcounter, 6).Range.Text = g.Standard;
-                oTable.Cell(rowcounter, 6).Range.Bold = 0;
-                oTable.Cell(rowcounter, 6).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            }
+                InsertValueCell(row.GetCell(5), g.Standard);
         }
 
-        private static void PrintWordTableGeometri(Word.Table oTable, List<string> geom, bool isFag)
+        private static void PrintWordTableGeometri(XWPFTable table, IEnumerable<string> geometries)
         {
-            oTable.Rows.Add();
-            int rowcounter = oTable.Rows.Count;
-            oTable.Cell(rowcounter, 1).Range.Text = "Geometri";
-            oTable.Cell(rowcounter, 1).Range.Bold = 0;
-            oTable.Cell(rowcounter, 1).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            oTable.Cell(rowcounter, 2).Range.Text = String.Join(",", geom.ToArray(), 0, geom.Count);
-            oTable.Cell(rowcounter, 2).Range.Bold = 0;
-            oTable.Cell(rowcounter, 2).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-           
-            oTable.Cell(rowcounter, 3).Range.Bold = 0;
-            oTable.Cell(rowcounter, 3).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            
-            oTable.Cell(rowcounter, 4).Range.Text = "";
-            oTable.Cell(rowcounter, 4).Range.Bold = 0;
-            oTable.Cell(rowcounter, 4).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            oTable.Cell(rowcounter, 5).Range.Text = "";
-            oTable.Cell(rowcounter, 5).Range.Bold = 0;
-            oTable.Cell(rowcounter, 5).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            if (isFag)
-            {
-                oTable.Cell(rowcounter, 6).Range.Text = "";
-                oTable.Cell(rowcounter, 6).Range.Bold = 0;
-                oTable.Cell(rowcounter, 6).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            }
+            var row = table.CreateRow();
+
+            InsertValueCell(row.GetCell(0), "Geometri");
+            InsertValueCell(row.GetCell(1), string.Join(",", geometries));
         }
 
-        private static void PrintWordTableBasiselement(Word.Table oTable, Basiselement b, bool isFag)
+        private static void PrintWordTableBasiselement(XWPFTable table, Basiselement basiselement, bool isFag)
         {
-            oTable.Rows.Add();
-            int rowcounter = oTable.Rows.Count;
-            oTable.Cell(rowcounter, 1).Range.Text = b.UML_Navn;
-            oTable.Cell(rowcounter, 1).Range.Bold = 0;
-            oTable.Cell(rowcounter, 1).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            oTable.Cell(rowcounter, 2).Range.Text = b.SOSI_Navn;
-            oTable.Cell(rowcounter, 2).Range.Bold = 0;
-            oTable.Cell(rowcounter, 2).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            oTable.Cell(rowcounter, 3).Range.Text = GetAnyAllowedValuesOrDefaultValue();
-            oTable.Cell(rowcounter, 3).Range.Bold = 0;
-            oTable.Cell(rowcounter, 3).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
+            var row = table.CreateRow();
             
-            oTable.Cell(rowcounter, 4).Range.Text = b.Multiplisitet;
-            oTable.Cell(rowcounter, 4).Range.Bold = 0;
-            oTable.Cell(rowcounter, 4).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            oTable.Cell(rowcounter, 5).Range.Text = b.Datatype;
-            oTable.Cell(rowcounter, 5).Range.Bold = 0;
-            oTable.Cell(rowcounter, 5).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
+            InsertValueCell(row.GetCell(0), basiselement.UML_Navn);
+            InsertValueCell(row.GetCell(1), basiselement.SOSI_Navn);
+            InsertValueCell(row.GetCell(2), GetAnyAllowedValuesOrDefaultValue());
+            InsertValueCell(row.GetCell(3), basiselement.Multiplisitet);
+            InsertValueCell(row.GetCell(4), basiselement.Datatype);
+            
             if (isFag)
-            {
-                oTable.Cell(rowcounter, 6).Range.Text = b.Standard;
-                oTable.Cell(rowcounter, 6).Range.Bold = 0;
-                oTable.Cell(rowcounter, 6).Range.Shading.BackgroundPatternColor = Word.WdColor.wdColorAutomatic;
-            }
+                InsertValueCell(row.GetCell(5), basiselement.Standard);
+            return;
 
             string GetAnyAllowedValuesOrDefaultValue()
             {
-                var operatorAndParenthesis = b.Operator + " ({0})";
+                var operatorAndParenthesis = basiselement.Operator + " ({0})";
 
-                if (b.TillatteVerdier.Any())
+                if (basiselement.TillatteVerdier.Any())
                 {
-                    return string.Format(operatorAndParenthesis,
-                        b.TillatteVerdier.Count < 10 ? string.Join(",", b.TillatteVerdier.ToArray()) : "Kodeliste"
-                    );
+                    return string.Format(operatorAndParenthesis, basiselement.TillatteVerdier.Count < 10
+                        ? string.Join(",", basiselement.TillatteVerdier)
+                        : "Kodeliste");
                 }
 
-                return b.HarStandardVerdi() ? string.Format(operatorAndParenthesis, b.StandardVerdi) : string.Empty;
+                return basiselement.HarStandardVerdi()
+                    ? string.Format(operatorAndParenthesis, basiselement.StandardVerdi)
+                    : string.Empty;
             }
+        }
+
+        // Kodeliste
+        private static void CreateKodelisteTable(XWPFDocument doc, SosiKodeliste kodeliste)
+        {
+            CreateTableHeading(doc, kodeliste.Navn);
+
+            var table = doc.CreateTable(1, 3);
+
+            SetKodelisteTableLayout(table);
+
+            CreateKodelisteTableHeader(table);
+
+            foreach (var sosiKode in kodeliste.Verdier)
+            {
+                var row = table.CreateRow();
+                InsertValueCell(row.GetCell(0), sosiKode.SosiVerdi);
+                InsertValueCell(row.GetCell(1), sosiKode.Navn);
+                InsertValueCell(row.GetCell(2), sosiKode.Beskrivelse);
+            }
+        }
+
+        private static void SetKodelisteTableLayout(XWPFTable table)
+        {
+            SetTableLayout(table);
+
+            table.SetColumnWidth(0, 1100);
+            table.SetColumnWidth(1, 1205);
+            table.SetColumnWidth(2, 3295);
+        }
+
+        private static void CreateKodelisteTableHeader(XWPFTable table)
+        {
+            InsertHeaderCell(table.GetRow(0).GetCell(0), "Kode");
+            InsertHeaderCell(table.GetRow(0).GetCell(1), "Navn");
+            InsertHeaderCell(table.GetRow(0).GetCell(2), "Beskrivelse");
+        }
+
+        // Delte metoder
+        private static void SetTableLayout(XWPFTable table)
+        {
+            var tblLayout = table.GetCTTbl().tblPr.AddNewTblLayout();
+            tblLayout.type = ST_TblLayoutType.@fixed;
+
+            table.SetCellMargins(0, 70, 0, 70);
+
+            table.Width = 5600;
+
+            table.SetBottomBorder(XWPFTable.XWPFBorderType.SINGLE, 1, 0, "000000");
+            table.SetTopBorder(XWPFTable.XWPFBorderType.SINGLE, 1, 0, "000000");
+            table.SetLeftBorder(XWPFTable.XWPFBorderType.SINGLE, 1, 0, "000000");
+            table.SetRightBorder(XWPFTable.XWPFBorderType.SINGLE, 1, 0, "000000");
+            table.SetInsideHBorder(XWPFTable.XWPFBorderType.SINGLE, 1, 0, "000000");
+        }
+
+        private static void CreateTableHeading(XWPFDocument doc, string text)
+        {
+            var p = doc.CreateParagraph();
+            p.Alignment = ParagraphAlignment.LEFT;
+            p.SpacingAfter = 0;
+            var r = p.CreateRun();
+            r.FontFamily = "Calibri Light";
+            r.SetColor("2F5496");
+            r.FontSize = 11;
+            r.IsItalic = true;
+
+            r.SetText(text);
+        }
+
+        private static void InsertHeaderCell(XWPFTableCell cell, string line1, string line2 = null)
+        {
+            cell.SetColor("F3F3F3");
+            var p = cell.Paragraphs[0];
+            var r = p.CreateRun();
+            r.FontFamily = "Calibri";
+            r.FontSize = 11;
+            r.IsBold = true;
+            r.SetText(line1);
+            if (line2 != null)
+            {
+                r.AddBreak(BreakType.TEXTWRAPPING);
+                r.AppendText(line2);
+            }
+        }
+
+        private static void InsertValueCell(XWPFTableCell cell, string value)
+        {
+            var p = cell.Paragraphs[0];
+            var r = p.CreateRun();
+            r.FontFamily = "Calibri";
+            r.FontSize = 11;
+            r.SetText(value);
+        }
+
+        private static void CreateTitle(XWPFDocument doc, bool isFag, string pakkenavn)
+        {
+            var p = doc.CreateParagraph();
+            p.Alignment = ParagraphAlignment.LEFT;
+            p.SpacingAfter = 0;
+            var r = p.CreateRun();
+            r.FontFamily = "Calibri Light";
+            r.SetColor("2F5496");
+            r.FontSize = 13;
+
+            if (isFag) r.SetText("Fagområde: " + pakkenavn);
+            else r.SetText("Produktspesifikasjon: " + pakkenavn);
+        }
+
+        private static void CreateHeading3(XWPFDocument doc, string text)
+        {
+            var p = doc.CreateParagraph();
+            p.Alignment = ParagraphAlignment.LEFT;
+            p.SpacingAfter = 0;
+            var r = p.CreateRun();
+            r.FontFamily = "Calibri Light";
+            r.SetColor("1F3763");
+            r.FontSize = 12;
+
+            r.SetText(text);
         }
     }
 }

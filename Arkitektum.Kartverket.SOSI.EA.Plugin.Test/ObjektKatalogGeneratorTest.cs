@@ -1,13 +1,7 @@
-﻿using System.IO;
-using System.Reflection;
-using System.Xml;
-using System.Xml.Linq;
-using System.Xml.Xsl;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using System.Collections.Generic;
-using Arkitektum.Kartverket.SOSI.Model;
+﻿using Arkitektum.Kartverket.SOSI.Model;
 using Arkitektum.Kartverket.SOSI.EA.Plugin.Services;
+using System.Collections.Generic;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Arkitektum.Kartverket.SOSI.EA.Plugin.Test
 {
