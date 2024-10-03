@@ -1,0 +1,37 @@
+# nonk8s
+apiVersion: "backstage.io/v1alpha1"
+kind: "Component"
+metadata:
+  name: "sosi-ea-plugin"
+  tags:
+  - "private"
+spec:
+  type: "service"
+  lifecycle: "production"
+  owner: "standardisering"
+---
+apiVersion: "backstage.io/v1alpha1"
+kind: "Group"
+metadata:
+  name: "security_champion_sosi-ea-plugin"
+  title: "Security Champion sosi-ea-plugin"
+spec:
+  type: "security_champion"
+  parent: "it_security_champions"
+  members:
+  - "toreJohnsen"
+  children:
+  - "resource:sosi-ea-plugin"
+---
+apiVersion: "backstage.io/v1alpha1"
+kind: "Resource"
+metadata:
+  name: "sosi-ea-plugin"
+  links:
+  - url: "https://github.com/kartverket/sosi-ea-plugin"
+    title: "sosi-ea-plugin på GitHub"
+spec:
+  type: "repo"
+  owner: "security_champion_sosi-ea-plugin"
+  dependencyOf:
+  - "component:sosi-ea-plugin"
