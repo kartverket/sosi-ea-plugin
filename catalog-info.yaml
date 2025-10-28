@@ -11,19 +11,6 @@ spec:
   owner: "standardisering"
 ---
 apiVersion: "backstage.io/v1alpha1"
-kind: "Group"
-metadata:
-  name: "security_champion_sosi-ea-plugin"
-  title: "Security Champion sosi-ea-plugin"
-spec:
-  type: "security_champion"
-  parent: "it_security_champions"
-  members:
-  - "toreJohnsen"
-  children:
-  - "resource:sosi-ea-plugin"
----
-apiVersion: "backstage.io/v1alpha1"
 kind: "Resource"
 metadata:
   name: "sosi-ea-plugin"
@@ -32,6 +19,6 @@ metadata:
     title: "sosi-ea-plugin på GitHub"
 spec:
   type: "repo"
-  owner: "security_champion_sosi-ea-plugin"
+  owner: "standardisering"
   dependencyOf:
   - "component:sosi-ea-plugin"
